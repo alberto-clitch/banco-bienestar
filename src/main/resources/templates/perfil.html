@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: layout(title='Mi Perfil', content=~{::section})}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil</title>
+</head>
+
+<body>
+    <section>
+        <div th:if="${exito}" class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+            <i class="fa-solid fa-check-circle"></i>
+            <span th:text="${exito}">Éxito</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+            <i class="fa-solid fa-exclamation-circle"></i>
+            <span th:text="${error}">Error</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Hero del perfil -->
+        <div class="perfil-hero">
+            <div class="perfil-hero-content">
+                <!-- Foto de perfil con soporte para imagen personalizada -->
+                <div class="perfil-avatar-wrapper">
+                    <div class="perfil-avatar" th:if="${perfil.fotoPerfil == null}">
+                        <span th:text="${#strings.substring(perfil.nombre, 0, 1)}">U</span>
+                    </div>
+                    <img th:if="${perfil.fotoPerfil != null}" 
+                         th:src="${perfil.fotoPerfil}" 
+                         alt="Foto de perfil" class="perfil-foto">
+                    
+                    <!-- Botón para cambiar foto -->
+                    <label class="perfil-foto-btn" title="Cambiar foto de perfil">
+                        <i class="fa-solid fa-camera"></i>
+                        <form th:action="@{/perfil/subir-foto}" method="post" enctype="multipart/form-data" id="fotoForm">
+                            <input type="file" name="foto" id="fotoInput" accept="image/*" 
+                                   onchange="document.getElementById('fotoForm').submit()" style="display: none;">
+                        </form>
+                    </label>
+                </div>
+                <div>
+                    <h1 class="perfil-name" th:text="${perfil.nombre}">Nombre Usuario</h1>
+                    <p class="perfil-username" th:text="${perfil.username}">username</p>
+                    <span class="badge rounded-pill perfil-role-badge" th:classappend="${perfil.rol == 'EJECUTIVO'} ? 'bg-warning text-dark' : 'bg-info text-white'">
+                        <i class="fa-solid" th:classappend="${perfil.rol == 'EJECUTIVO'} ? 'fa-user-tie' : 'fa-user'"></i>
+                        <span th:text="${perfil.rol}">ROL</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-2">
+            <!-- Columna izquierda: Tarjeta informativa -->
+            <div class="col-lg-5">
+                <div class="perfil-card">
+                    <div class="card-head">
+                        <h4><i class="fa-solid fa-address-card me-2" style="color: #2563eb;"></i>Información General</h4>
+                    </div>
+                    <div class="perfil-info-list">
+                        <div class="perfil-info-item">
+                            <span class="perfil-info-label"><i class="fa-solid fa-user me-2"></i>Nombre</span>
+                            <span class="perfil-info-value" th:text="${perfil.nombre}">—</span>
+                        </div>
+                        <div class="perfil-info-item">
+                            <span class="perfil-info-label"><i class="fa-solid fa-at me-2"></i>Usuario</span>
+                            <span class="perfil-info-value" th:text="${perfil.username}">—</span>
+                        </div>
+                        <div class="perfil-info-item">
+                            <span class="perfil-info-label"><i class="fa-solid fa-id-badge me-2"></i>Rol</span>
+                            <span class="perfil-info-value text-uppercase" th:text="${perfil.rol}">—</span>
+                        </div>
+                        <div class="perfil-info-item">
+                            <span class="perfil-info-label"><i class="fa-solid fa-qrcode me-2"></i>CLABE</span>
+                            <span class="perfil-info-value font-monospace" th:text="${perfil.clabe}">—</span>
+                        </div>
+                        <div class="perfil-info-item">
+                            <span class="perfil-info-label"><i class="fa-solid fa-coins me-2"></i>Saldo</span>
+                            <span class="perfil-info-value fw-bold" style="color: #0f766e;">
+                                $ <span th:text="${#numbers.formatDecimal(perfil.saldo, 1, 'COMMA', 2, 'POINT')}">0.00</span> MXN
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna derecha: Formulario de edición -->
+            <div class="col-lg-7">
+                <div class="perfil-card">
+                    <div class="card-head">
+                        <h4><i class="fa-solid fa-pen-to-square me-2" style="color: #2563eb;"></i>Editar Perfil</h4>
+                    </div>
+
+                    <form th:action="@{/perfil/actualizar}" method="post" class="perfil-form">
+                        <!-- Nombre -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold" for="nombre">
+                                <i class="fa-solid fa-user-pen me-1"></i> Nombre completo
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                                <input type="text" id="nombre" name="nombre" class="form-control"
+                                       th:value="${perfil.nombre}" required maxlength="100">
+                            </div>
+                        </div>
+
+                        <!-- Contraseña actual -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold" for="passwordActual">
+                                <i class="fa-solid fa-lock me-1"></i> Contraseña actual
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
+                                <input type="password" id="passwordActual" name="passwordActual" class="form-control"
+                                       placeholder="Dejar en blanco si no deseas cambiarla">
+                            </div>
+                            <small class="text-muted">Solo si deseas cambiar tu contraseña</small>
+                        </div>
+
+                        <!-- Contraseña nueva -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold" for="passwordNueva">
+                                <i class="fa-solid fa-lock-open me-1"></i> Nueva contraseña
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-shield-key"></i></span>
+                                <input type="password" id="passwordNueva" name="passwordNueva" class="form-control"
+                                       placeholder="Mínimo 6 caracteres" minlength="6">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex gap-3 justify-content-end">
+                            <button type="reset" class="btn btn-outline-secondary px-4">
+                                <i class="fa-solid fa-rotate-left me-1"></i> Restablecer
+                            </button>
+                            <button type="submit" class="btn btn-primary px-5"
+                                    style="background: linear-gradient(135deg, #061a40, #0b2c5f); border: none;">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Guardar cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" 
+      th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Banco de México</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" 
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/miestilo.css}">
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
+            crossorigin="anonymous" defer></script>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm" sec:authorize="isAuthenticated()">
+        <div class="container-fluid">
+            
+            <a class="navbar-brand fw-bold fs-4" th:href="@{/dashboard}">
+                <i class="fa-solid fa-bank"></i> Banco de México
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+                    data-bs-target="#navbarNav" aria-controls="navbarNav" 
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-icon" th:href="@{/}">
+                            <i class="fa-solid fa-house"></i> Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-icon" th:href="@{/transferencias}">
+                            <i class="fa-solid fa-money-bill-transfer"></i> Transferencias
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-icon" th:href="@{/solicitudes-credito}">
+                            <i class="fa-solid fa-hand-holding-dollar"></i> Solicitudes de Crédito
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown nav-separator-start" sec:authorize="hasRole('EJECUTIVO')">
+                        <a class="nav-link dropdown-toggle nav-link-icon" href="#" id="adminDropdown" 
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-shield-halved"></i> Administración
+                        </a>
+                        <ul class="dropdown-menu shadow-sm" aria-labelledby="adminDropdown" 
+                            style="border-radius: 14px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.12) !important; padding: 8px;">
+                            <li>
+                                <a class="dropdown-item rounded-3" th:href="@{/admin/dashboard}">
+                                    <i class="fa-solid fa-user-plus dropdown-icon"></i>
+                                    <div class="dropdown-item-content">
+                                        <span class="dropdown-item-title">Registrar cliente</span>
+                                        <span class="dropdown-item-desc">Abrir cuenta nueva</span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item rounded-3" th:href="@{/admin/usuarios}">
+                                    <i class="fa-solid fa-users dropdown-icon"></i>
+                                    <div class="dropdown-item-content">
+                                        <span class="dropdown-item-title">Usuarios</span>
+                                        <span class="dropdown-item-desc">Gestionar usuarios del sistema</span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item rounded-3" th:href="@{/admin/movimientos}">
+                                    <i class="fa-solid fa-arrow-right-arrow-left dropdown-icon"></i>
+                                    <div class="dropdown-item-content">
+                                        <span class="dropdown-item-title">Movimientos</span>
+                                        <span class="dropdown-item-desc">Autorizar y gestionar operaciones</span>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+                    <!-- Botón de Iniciar Sesión (no autenticado) -->
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link nav-link-icon" th:href="@{/login}">
+                            <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+                        </a>
+                    </li>
+
+                    <!-- Dropdown de usuario (autenticado) -->
+                    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                        <a class="nav-link dropdown-toggle user-dropdown-toggle d-flex align-items-center gap-2" 
+                           href="#" id="navbarDropdown" 
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="user-avatar-nav">
+                                <i class="fa-solid fa-circle-user fs-5"></i>
+                            </span>
+                            <span class="d-none d-lg-inline small fw-semibold" sec:authentication="name">Usuario</span>
+                            <span class="badge bg-warning text-dark rounded-pill text-uppercase" style="font-size:0.6rem; padding: 3px 8px;" 
+                                  sec:authorize="hasRole('EJECUTIVO')">Ejecutivo</span>
+                            <span class="badge bg-light text-dark rounded-pill text-uppercase" style="font-size:0.6rem; padding: 3px 8px;" 
+                                  sec:authorize="hasRole('CLIENTE')">Cliente</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" 
+                            style="border-radius: 14px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.12) !important; padding: 8px; min-width: 220px;">
+                            
+                            <!-- Cabecera del dropdown -->
+                            <li class="px-3 py-2 text-center" style="border-bottom: 1px solid #edf2f7;">
+                                <div class="user-avatar-nav-lg mx-auto mb-1">
+                                    <i class="fa-solid fa-circle-user fs-2" style="color: #2563eb;"></i>
+                                </div>
+                                <div class="fw-semibold small" sec:authentication="name">Usuario</div>
+                                <span class="badge bg-warning text-dark rounded-pill text-uppercase mt-1" style="font-size:0.6rem; padding: 3px 8px;" 
+                                      sec:authorize="hasRole('EJECUTIVO')">Ejecutivo</span>
+                                <span class="badge bg-light text-dark rounded-pill text-uppercase mt-1" style="font-size:0.6rem; padding: 3px 8px;" 
+                                      sec:authorize="hasRole('CLIENTE')">Cliente</span>
+                            </li>
+
+                            <li style="margin-top: 4px;">
+                                <a class="dropdown-item rounded-3" th:href="@{/perfil}">
+                                    <i class="fa-solid fa-circle-user dropdown-icon"></i>
+                                    <div class="dropdown-item-content">
+                                        <span class="dropdown-item-title">Mi Perfil</span>
+                                        <span class="dropdown-item-desc">Ver y editar tu información</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                            <li><hr class="dropdown-divider my-1"></li>
+
+                            <li class="px-3 py-1">
+                                <form th:action="@{/logout}" method="post" class="m-0">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-3 d-flex align-items-center justify-content-center gap-2 py-2">
+                                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div th:replace="${content}"></div>
+    </main>
+
+    <footer class="bg-dark text-light py-5 mt-5" sec:authorize="isAuthenticated()">
+        <div class="container">
+            <div class="row">
+                
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fa-solid fa-bank"></i> Banco de México
+                    </h5>
+                    <p class="text-muted small">
+                        Tu confianza, nuestra prioridad. <br>
+                        Más de 20 años acompañando el crecimiento financiero de los mexicanos.
+                    </p>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h6 class="fw-bold mb-3">Banco</h6>
+                    <ul class="list-unstyled">
+                        <li><a th:href="@{/sobre-nosotros}" class="text-muted text-decoration-none small">Sobre Nosotros</a></li>
+                        <li><a th:href="@{/sucursales}" class="text-muted text-decoration-none small">Sucursales</a></li>
+                        <li><a th:href="@{/atencion-cliente}" class="text-muted text-decoration-none small">Atención al Cliente</a></li>
+                        <li><a th:href="@{/trabaja-con-nosotros}" class="text-muted text-decoration-none small">Trabaja con Nosotros</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h6 class="fw-bold mb-3">Productos</h6>
+                    <ul class="list-unstyled">
+                        <li><a th:href="@{/cuentas}" class="text-muted text-decoration-none small">Cuentas</a></li>
+                        <li><a th:href="@{/tarjetas}" class="text-muted text-decoration-none small">Tarjetas</a></li>
+                        <li><a th:href="@{/prestamos}" class="text-muted text-decoration-none small">Préstamos</a></li>
+                        <li><a th:href="@{/inversiones}" class="text-muted text-decoration-none small">Inversiones</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h6 class="fw-bold mb-3">Legal</h6>
+                    <ul class="list-unstyled mb-3">
+                        <li><a th:href="@{/privacidad}" class="text-muted text-decoration-none small">Aviso de Privacidad</a></li>
+                        <li><a th:href="@{/terminos}" class="text-muted text-decoration-none small">Términos y Condiciones</a></li>
+                        <li><a th:href="@{/seguridad}" class="text-muted text-decoration-none small">Seguridad Bancaria</a></li>
+                    </ul>
+                    
+                    <div class="text-muted small">
+                        <p class="mb-1"><strong>Teléfono:</strong> 55 1234 5678</p>
+                        <p class="mb-0"><strong>Email:</strong> contacto@bancodeMexico.mx</p>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-secondary">
+
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <small class="text-muted">
+                        © 2026 Banco de México. Todos los derechos reservados.
+                    </small>
+                </div>
+                <div class="col-md-6 text-center text-md-end mt-3 mt-md-0">
+                    <small class="text-muted">
+                        Autorizado por la Comisión Nacional Bancaria y de Valores
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

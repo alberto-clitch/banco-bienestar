@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(title='Transferencia', content=~{::section})}">
+<body>
+    <section class="py-5" style="background: linear-gradient(180deg, #eef4fb 0%, #fdfcff 100%);">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-xl-10">
+                    <div class="card rounded-4 shadow-sm overflow-hidden border-0">
+                        <div class="row g-0">
+                            <div class="col-lg-5" style="background: linear-gradient(135deg, #061a40 0%, #0b2c5f 55%, #123c7c 100%);">
+                                <div class="h-100 p-5 text-white d-flex flex-column justify-content-center">
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2 small align-self-start">Transferencia</span>
+                                    <h1 class="display-6 fw-bold mt-4 mb-3" style="line-height: 1.05;">Envía dinero rápidamente</h1>
+                                    <p class="mb-4 text-white-75">Transfiere fondos a otra CLABE desde tu cuenta principal con seguridad y seguimiento inmediato.</p>
+                                    <div class="bg-white bg-opacity-10 rounded-4 p-4 border border-white-10">
+                                        <div class="mb-3">
+                                            <h6 class="text-white-75 mb-1">Ventajas</h6>
+                                            <ul class="list-unstyled small mb-0 text-white-75">
+                                                <li><i class="fa-solid fa-check text-warning me-2"></i>Validación instantánea de CLABE</li>
+                                                <li><i class="fa-solid fa-check text-warning me-2"></i>Confirmación de monto antes de enviar</li>
+                                                <li><i class="fa-solid fa-check text-warning me-2"></i>Operación protegida</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <p class="small text-white-50 mb-1">Recomendación</p>
+                                            <p class="small text-white-50 mb-0">Revisa bien la CLABE de destino antes de confirmar la transferencia.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-7">
+                                <div class="p-4 p-xl-5 h-100 d-flex flex-column">
+                                    <div class="mb-4">
+                                        <span class="badge bg-light text-dark rounded-pill px-3 py-2 small">Formulario de transferencia</span>
+                                        <h2 class="h3 fw-bold mt-3 mb-2" style="color: #061a40;">Completa los datos</h2>
+                                        <p class="text-muted mb-0">La operación se realizará desde tu cuenta principal registrada.</p>
+                                    </div>
+                                    
+                                    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                        <span th:text="${param.error}">Error al procesar la transferencia.</span>
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                    
+                                    <form th:action="@{/procesar-transferencia}" method="post" id="transferForm" class="needs-validation flex-grow-1 d-flex flex-column" novalidate>
+                                        <div class="mb-4">
+                                            <label for="cuentaDestino" class="form-label fw-semibold">Cuenta Destino</label>
+                                            <input type="text" id="cuentaDestino" name="cuentaDestino" class="form-control form-control-lg" placeholder="000000000000000000" minlength="18" maxlength="18" pattern="\d{18}" required>
+                                            <div class="invalid-feedback">Ingresa una CLABE de 18 dígitos válida.</div>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <label for="monto" class="form-label fw-semibold">Monto</label>
+                                            <div class="input-group rounded-4 overflow-hidden border border-secondary-subtle">
+                                                <span class="input-group-text bg-white border-0 text-primary">$</span>
+                                                <input type="number" id="monto" name="monto" class="form-control border-0" placeholder="1000.00" step="0.01" min="1" required style="background: transparent; color: #061a40; font-weight: 700;">
+                                            </div>
+                                            <div class="form-text text-muted small mt-2">El importe se debitará de tu saldo disponible.</div>
+                                            <div class="invalid-feedback">Introduce un monto mayor a cero.</div>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <label for="descripcion" class="form-label fw-semibold">Descripción</label>
+                                            <input type="text" id="descripcion" name="descripcion" class="form-control" placeholder="Ej. Pago de servicios, regalo, ahorro" maxlength="120">
+                                        </div>
+                                        
+                                        <div class="mt-auto d-grid">
+                                            <button type="submit" class="btn btn-primary btn-lg rounded-pill" style="background: linear-gradient(135deg, #061a40, #123c7c); border: none;">
+                                                <i class="fa-solid fa-paper-plane me-2"></i> Realizar transferencia
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

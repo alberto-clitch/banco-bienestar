@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: layout(title='Dashboard', content=~{::section})}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+    <section>
+        <div class="bg-white rounded shadow-sm p-4 p-md-5 border" style="border-color: #d4af37 !important;">
+            <h2 class="display-6 fw-light mb-4" style="color: #061a40;">
+                Bienvenido de nuevo,
+                <span class="fw-bold" style="color: #b88a00;" th:text="${nombreCliente}">Usuario</span>
+            </h2>
+            <div class="row mb-5">
+                <div class="col-md-6"> 
+                    <div class="rounded p-4 text-white shadow"
+                        style="background: linear-gradient(135deg, #061a40, #0b2c5f, #123c7c);">
+                        <h3 class="h6 text-uppercase mb-2" style="color: #ffd966;">
+                            Cuenta de Debito Principal
+                        </h3>
+                        <p class="display-5 fw-bold mb-3" style="color: #ffffff;">
+                            $ <span th:text="${#numbers.formatDecimal(saldoTotal,1,'COMMA',2,'POINT')}">0.00</span> MXN
+                        </p>
+                        <p class="small font-monospace mb-0" style="color: #e8eef7;"
+                            th:text="'CLABE: '+ ${cuentaClabe}">CLABE: 000000000000000000</p>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-center justify-content-center">
+                    <div class="w-100 p-4 rounded shadow-sm" style="background: #f8f9ff; border: 1px solid #dfe4f0;">
+                        <h4 class="h5 fw-bold text-dark mb-3">Solicita crédito</h4>
+                        <p class="text-muted small mb-4">Accede al formulario de crédito desde aquí.</p>
+                        <a th:href="@{/credito}" class="btn btn-primary btn-lg w-100"
+                           style="background: linear-gradient(135deg, #061a40, #0b2c5f, #123c7c); border: none;">
+                            Solicitar crédito
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="h5 fw-bold mb-3" style="color: #061a40;">Movimientos Recientes</h3>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered bg-white align-middle">
+                    <thead>
+                        <tr>
+                            <th style="background-color: #061a40; color: #ffffff;">Fecha</th>
+                            <th style="background-color: #061a40; color: #ffffff;">Descripción</th>
+                            <th style="background-color: #061a40; color: #ffffff;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="movimiento : ${movimientos}">
+                            <td style="color: #4b5563;" th:text="${#temporals.format(movimiento.fecha, 'dd/MM/yyyy HH:mm')}">01/01/2026 14:30</td>
+                            <td style="color: #111827;" th:text="${movimiento.descripcion}"> Compra </td>
+                            <td th:if="${movimiento.cuentaOrigen == cuentaClabe}" class="text-end fw-bold text-danger"
+                                th:text="${'-' + #numbers.formatDecimal(movimiento.monto, 1, 'COMMA', 2, 'POINT')}">
+                                -$0.00
+                            </td>
+                            <td th:unless="${movimiento.cuentaOrigen == cuentaClabe}" class="text-end fw-bold text-success"
+                                th:text="${'+' + #numbers.formatDecimal(movimiento.monto, 1, 'COMMA', 2, 'POINT')}">
+                                +$0.00
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6"> 
+                    <div class="card shadow-sm border-0 p-3">
+                        <h3 class="h5 fw-bold text-dark mb-4">
+                            Distribución de gastos
+                        </h3>
+                        <div style="position: relative; height:300px; width:100%;">
+                            <canvas id="graficaGastos"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                fetch("/api/v1/finanzas/gastos-mes")
+                .then(response => {
+                    if (!response.ok) 
+                        throw new Error("Error en la Red al obtener los datos de gastos");
+                    
+                    return response.json();
+                })
+                .then(datosJson => {
+                    // Mapeo de los datos Json para la pagina
+                    const etiqueta = datosJson.map(item => item.categoria);
+                    const valores = datosJson.map(item => item.monto);
+                    const color = datosJson.map(item => item.colorHex);
+
+                    const ctx = document.getElementById("graficaGastos").getContext('2d');
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: etiqueta,
+                            datasets: [{
+                                data: valores,
+                                backgroundColor: color,
+                                borderWidth: 2,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: { 
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'right' } 
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error("Error en Chart.js:", error));
+            });
+            </script>
+        </div>
+    </section>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(title='Acceso Seguro', content=~{::section})}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Seguro - Banco de México</title>
+</head>
+<body>
+
+    <!-- Sección del contenedor con un centrado profesional -->
+    <section class="d-flex align-items-center justify-content-center my-5" style="min-height: 60vh;">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+                    
+                    <!-- Tarjeta contenedora con el mismo borde dorado y sombra suave del Dashboard -->
+                    <div class="bg-white rounded shadow-sm p-4 p-md-5 border" style="border-color: #d4af37 !important;">
+                        
+                        <!-- Logotipo del Banco y Encabezado integrado -->
+                        <div class="text-center mb-4">
+                            <h2 class="h3 fw-light mb-2" style="color: #061a40;">
+                                <span class="fw-bold" style="color: #061a40;">Banco</span> de <span class="fw-bold" style="color: #b88a00;">México</span>
+                            </h2>
+                            <p class="text-muted small">Banca Digital · Acceso Protegido</p>
+                            <hr class="mx-auto my-3" style="width: 60px; border-top: 2px solid #b88a00; opacity: 1;">
+                        </div>
+
+                        <!-- Feedback de Errores con Spring Security -->
+                        <div th:if="${param.error}" class="alert alert-danger d-flex align-items-center small py-2 border-0 shadow-sm" role="alert" style="background-color: #fdf2f2; color: #9b1c1c;">
+                            <span class="fw-bold me-2">⚠️</span> Los datos ingresados no son válidos. Por favor, verifica.
+                        </div>
+
+                        <!-- Feedback de Cierre de Sesión Seguro -->
+                        <div th:if="${param.logout}" class="alert alert-success d-flex align-items-center small py-2 border-0 shadow-sm" role="alert" style="background-color: #f3faf7; color: #03543f;">
+                            <span class="fw-bold me-2">✓</span> Tu sesión ha sido finalizada de forma segura.
+                        </div>
+
+                        <!-- Formulario de acceso -->
+                        <form th:action="@{/login}" method="post" class="mt-2">
+                            
+                            <!-- Campo de Usuario -->
+                            <div class="mb-3">
+                                <label for="username" class="form-label small fw-bold" style="color: #061a40;">Número de Cliente o Usuario</label>
+                                <input type="text" id="username" name="username" 
+                                       class="form-control font-monospace border-secondary-subtle" 
+                                       style="padding: 0.6rem 0.75rem;"
+                                       required autofocus>
+                            </div>
+
+                            <!-- Campo de Contraseña -->
+                            <div class="mb-4">
+                                <label for="password" class="form-label small fw-bold" style="color: #061a40;">Contraseña de Internet</label>
+                                <input type="password" id="password" name="password" 
+                                       class="form-control border-secondary-subtle" 
+                                       style="padding: 0.6rem 0.75rem;"
+                                       required>
+                            </div>
+
+                            <!-- Botón de Envío con el gradiente idéntico al del Dashboard -->
+                            <div class="d-grid gap-2 pt-2 mb-3">
+                                <button type="submit" class="btn text-white fw-bold shadow-sm border-0 py-2" 
+                                        style="background: linear-gradient(135deg, #061a40, #0b2c5f, #123c7c); font-size: 0.95rem;">
+                                    Ingresar de Forma Segura
+                                </button>
+                            </div>
+
+                            <!-- Enlaces de soporte y recuperación con el color dorado corporativo -->
+                            <div class="text-center mt-4 pt-2">
+                                <a href="#" class="small text-decoration-none fw-medium d-block mb-2" style="color: #b88a00;">
+                                    ¿Problemas para entrar? Recuperar contraseña
+                                </a>
+                                <span class="text-muted d-block" style="font-size: 0.75rem;">
+                                    Para tu seguridad, nunca compartas tus claves de acceso.
+                                </span>
+                            </div>
+
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

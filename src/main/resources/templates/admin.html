@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Panel Administrador Ejecutivo', ~{::section})}">
+<head>
+    <title>Panel Ejecutivo</title>
+</head>
+<body>
+
+    <section class="admin-panel">
+
+        <div th:if="${param.exito}"
+             class="alert alert-success d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="fa-solid fa-circle-check fs-5"></i>
+            <div>Operación exitosa</div>
+        </div>
+
+        <div th:if="${param.error}"
+             class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="fa-solid fa-circle-exclamation fs-5"></i>
+            <div th:text="${param.error}">Error en la Operación</div>
+        </div>
+
+        <div class="admin-hero mb-4">
+            <div>
+                <span class="admin-kicker">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Acceso ejecutivo
+                </span>
+                <h2 class="admin-title">Panel Administrador</h2>
+                <p class="admin-text">
+                    Gestión de cartera de clientes, apertura de cuentas y administración de créditos en un solo lugar.
+                </p>
+            </div>
+
+            <div class="admin-hero-badge">
+                <i class="fa-solid fa-user-shield"></i>
+                <span th:text="${#authentication.getName()}"></span>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-md-4">
+                <div class="admin-card stat-card primary">
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="${#lists.size(clientes)}">0</h3>
+                        <p class="stat-label">Clientes registrados</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="admin-card stat-card success">
+                    <div class="stat-icon"><i class="fa-solid fa-credit-card"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="${#lists.size(clientes)}">0</h3>
+                        <p class="stat-label">Cuentas activas</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="admin-card stat-card warning">
+                    <div class="stat-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="${#lists.size(solicitudes)}">0</h3>
+                        <p class="stat-label">Solicitudes pendientes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-7">
+                <div class="dashboard-form-card p-4 p-md-5 mb-4">
+                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+                        <div>
+                            <p class="small fw-bold text-uppercase mb-2" style="color: #b88a00; letter-spacing: 0.12em;">
+                                Registro rápido
+                            </p>
+                            <h3 class="h5 fw-bold mb-1" style="color: #061a40;">Registrar nuevo cliente</h3>
+                            <p class="text-muted mb-0">Formulario visual para capturar datos básicos del cliente desde el panel de administración.</p>
+                        </div>
+                        <span class="badge rounded-pill px-3 py-2" style="background: #eef4ff; color: #123c7c;">
+                            Vista previa
+                        </span>
+                    </div>
+
+                    <form class="row g-3" th:action="@{/admin/crear-cliente}" method="post">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="color: #18304a;">Nombre</label>
+                            <input type="text" class="form-control form-control-lg" id="nombre" name="nombre" placeholder="Ej. Ana López" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="color: #18304a;">Nombre del usuario</label>
+                            <input type="text" class="form-control form-control-lg" id="username" name="username" placeholder="Ej. ana.lopez" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="color: #18304a;">Contraseña temporal</label>
+                            <input type="password" class="form-control form-control-lg" id="password" name="password" placeholder="••••••••" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="color: #18304a;">Monto de apertura</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text" style="background: #f8faff; color: #123c7c;">$</span>
+                                <input type="number" class="form-control" id="saldoInicial" name="saldoInicial" placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-lg w-100 text-white" style="background: linear-gradient(135deg, #061a40, #123c7c); border: none;">
+                                Registrar cliente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-12 col-xl-7">
+                <div class="admin-card">
+                    <div class="card-head">
+                        <h4>Solicitudes de crédito</h4>
+                        <span class="pill muted">Todas las solicitudes</span>
+                    </div>
+                    <div class="table-responsive admin-table-wrapper">
+                        <table class="table admin-table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Cliente / Solicitante</th>
+                                    <th scope="col">Monto</th>
+                                    <th scope="col">Firma</th>
+                                    <th scope="col">Fecha</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${#lists.isEmpty(solicitudes)}">
+                                    <td colspan="6" class="text-muted text-center py-4">Sin solicitudes registradas por el momento.</td>
+                                </tr>
+                                <tr th:each="solicitud : ${solicitudes}">
+                                    <td>
+                                        <div class="fw-semibold" th:text="${solicitud.usuario != null ? solicitud.usuario.nombre : 'Sin cliente'}"></div>
+                                        <div class="small text-muted" th:text="${solicitud.usuario != null ? solicitud.usuario.username : ''}"></div>
+                                    </td>
+                                    <td th:text="${#numbers.formatCurrency(solicitud.montoSolicitado)}"></td>
+                                    <td>
+                                        <img th:if="${solicitud.firmaBase64 != null}"
+                                             th:src="${solicitud.firmaBase64.startsWith('data:') ? solicitud.firmaBase64 : 'data:image/png;base64,' + solicitud.firmaBase64}"
+                                             alt="Firma Digital" class="img-fluid rounded-3" style="max-height: 48px; object-fit: contain;" />
+                                        <span th:if="${solicitud.firmaBase64 == null}" class="small text-muted">Sin firma</span>
+                                    </td>
+                                    <td>
+                                        <div class="small" th:if="${solicitud.fecha != null}">
+                                            <span class="fw-semibold d-block" th:text="${#temporals.format(solicitud.fecha, 'dd/MM/yyyy')}"></span>
+                                            <span class="text-muted" th:text="${#temporals.format(solicitud.fecha, 'HH:mm')}"></span>
+                                        </div>
+                                        <span th:if="${solicitud.fecha == null}" class="small text-muted">—</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill" 
+                                              th:classappend="${solicitud.estado == 'APROBADO' ? 'bg-success' : (solicitud.estado == 'RECHAZADO' ? 'bg-danger' : 'bg-warning text-dark')}"
+                                              th:text="${solicitud.estado}"></span>
+                                    </td>
+                                    <td>
+                                        <div th:if="${solicitud.estado == 'PENDIENTE'}" class="d-flex gap-2 flex-wrap">
+                                            <form th:action="@{/admin/cambiar-estado-credito}" method="post" style="display:inline;">
+                                                <input type="hidden" name="solicitudId" th:value="${solicitud.id}" />
+                                                <input type="hidden" name="nuevoEstado" value="APROBADO" />
+                                                <button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('¿Estás seguro de aprobar esta solicitud de crédito?')">
+                                                    <i class="fa-solid fa-check"></i> Aprobar
+                                                </button>
+                                            </form>
+                                            <form th:action="@{/admin/cambiar-estado-credito}" method="post" style="display:inline;">
+                                                <input type="hidden" name="solicitudId" th:value="${solicitud.id}" />
+                                                <input type="hidden" name="nuevoEstado" value="RECHAZADO" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill" onclick="return confirm('¿Estás seguro de rechazar esta solicitud de crédito?')">
+                                                    <i class="fa-solid fa-xmark"></i> Rechazar
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <span th:if="${solicitud.estado == 'APROBADO'}" class="text-success small fw-semibold">
+                                            <i class="fa-solid fa-circle-check"></i> Aprobado
+                                        </span>
+                                        <span th:if="${solicitud.estado == 'RECHAZADO'}" class="text-danger small fw-semibold">
+                                            <i class="fa-solid fa-circle-xmark"></i> Rechazado
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-5">
+                <div class="admin-card">
+                    <div class="card-head">
+                        <h4>Gestión de clientes</h4>
+                    </div>
+                    <div class="admin-list">
+                        <div th:if="${#lists.isEmpty(clientes)}" class="admin-list-item">
+                            <i class="fa-solid fa-user-check"></i>
+                            <span>No hay clientes registrados aún.</span>
+                        </div>
+                        <div th:each="cliente : ${clientes}" class="admin-list-item">
+                            <i class="fa-solid fa-user-check"></i>
+                            <span>
+                                <span class="fw-semibold" th:text="${cliente.nombre}"></span>
+                                <span class="small text-muted d-block" th:text="${cliente.username}"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+</body>
+</html>

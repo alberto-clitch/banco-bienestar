@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout('Solicitud de credito',
+~{::section})}">
+
+<body>
+    <section class="py-4" style="background: linear-gradient(180deg, #eef4fb 0%, #fdfcff 100%);">
+        <div class="container-fluid px-4">
+            <div class="row gx-4 gy-4">
+                <div class="col-xl-5">
+                    <div class="card rounded-4 shadow-sm overflow-hidden h-100" style="background: linear-gradient(135deg, #061a40 0%, #0b2c5f 55%, #123c7c 100%); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="p-5 h-100 d-flex flex-column justify-content-between text-white">
+                            <div>
+                                <span class="admin-kicker" style="background: rgba(255,255,255,0.14); color: #f8f9ff;">Solicitud de crédito</span>
+                                <h1 class="admin-title text-white mt-4 mb-3" style="font-size: 2.6rem; line-height: 1.05;">Solicitud de crédito</h1>
+                                <p class="admin-text" style="color: rgba(255,255,255,0.82);">Tramita un financiamiento inmediato firmando el contrato electrónico en el lienzo digital.</p>
+                            </div>
+                            <div class="d-flex flex-column gap-3">
+                                <div class="rounded-4 p-3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="rounded-3 p-3" style="background: rgba(255,255,255,0.16);"><i class="fa-solid fa-shield-check fa-lg"></i></div>
+                                        <div>
+                                            <p class="mb-1 small text-white-75">Operación segura</p>
+                                            <p class="mb-0 small text-white">Tu firma se guarda como imagen en el navegador.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="rounded-4 p-3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="rounded-3 p-3" style="background: rgba(255,255,255,0.16);"><i class="fa-solid fa-clock fa-lg"></i></div>
+                                        <div>
+                                            <p class="mb-1 small text-white-75">Flujo ágil</p>
+                                            <p class="mb-0 small text-white">Completa y envía tu solicitud sin complicaciones.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-7">
+                    <div class="card rounded-4 shadow-sm border-0 h-100" style="background: #ffffff; border: 1px solid #e4ebf4;">
+                        <div class="p-4 p-xl-5 h-100 d-flex flex-column">
+                            <div class="mb-4">
+                                <span class="badge bg-warning text-dark rounded-pill px-3 py-2 small">Contrato de crédito</span>
+                                <h3 class="mt-3 mb-2 fw-bold" style="color: #061a40;">Completa tu solicitud</h3>
+                                <p class="text-muted mb-0">Ingresa el monto y firma digitalmente para continuar.</p>
+                            </div>
+                            <form th:action="@{/procesar-credito}" method="post" onsubmit="return prepararEnvioForm()" class="needs-validation flex-grow-1 d-flex flex-column">
+                                <div class="mb-4">
+                                    <label for="monto" class="form-label fw-semibold mb-2">Monto Solicitado ($)</label>
+                                    <div class="input-group rounded-4 overflow-hidden border border-1 border-secondary-subtle">
+                                        <span class="input-group-text bg-white border-0 text-primary"><i class="fa-solid fa-sack-dollar"></i></span>
+                                        <input type="number" id="monto" name="monto" class="form-control border-0" placeholder="Ej. 10000.00" step="100" min="100" required style="background: transparent; color: #061a40; font-weight: 700;">
+                                    </div>
+                                    <div class="form-text text-muted small mt-2">El monto autorizado se acreditará al saldo actual.</div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold mb-2 d-flex justify-content-between align-items-center">
+                                        <span>Firma de Autorización Digital</span>
+                                        <span class="badge bg-light text-dark rounded-pill small">SOPORTE TÁCTIL</span>
+                                    </label>
+                                    <div class="rounded-4 p-3" style="background: #f8fafc; border: 1px solid #d8e2f1;">
+                                        <canvas id="firmaPad" width="500" height="200" class="w-100 rounded-4" style="background: #ffffff; border: 1px solid #d9e3ef; min-height: 200px;"></canvas>
+                                    </div>
+                                    <div class="mt-3 d-flex flex-wrap gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-4" onclick="limpiarFirma()">
+                                            <i class="fa-solid fa-eraser me-1"></i> Limpiar Lienzo
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="confirmarFirmaCapturada()">
+                                            <i class="fa-solid fa-check me-1"></i> Validar Trazo
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="firmaBase64" name="firmaBase64" required>
+                                <div class="mt-auto d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg rounded-pill w-100" style="background: linear-gradient(135deg, #061a40, #123c7c); border: none;">
+                                        <i class="fa-solid fa-file-signature me-2"></i> Presentar Solicitud Firmada
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12" id="lista-solicitudes">
+                    <div class="card rounded-4 shadow-sm overflow-hidden" style="background: linear-gradient(135deg, #061a40 0%, #0b2c5f 55%, #123c7c 100%); border: 1px solid rgba(255,255,255,0.08);">
+                        <div class="p-4 p-xl-5 text-white">
+                            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                                <div>
+                                    <h4 class="fw-bold mb-2">Historial de Créditos</h4>
+                                    <p class="text-white-50 mb-0">Revisa las solicitudes firmadas y el estado de cada operación.</p>
+                                </div>
+                                <span class="badge bg-white text-dark rounded-pill px-4 py-2">Vista rápida</span>
+                            </div>
+                            <div class="mt-4">
+                                <div th:if="${#lists.isEmpty(solicitudes)}" class="text-center py-5">
+                                    <div class="mb-3"><i class="fa-solid fa-folder-open fs-2 text-white-50"></i></div>
+                                    <h6 class="text-white-50 fw-normal small">Aún no solicitas créditos.</h6>
+                                </div>
+                                <div th:if="${not #lists.isEmpty(solicitudes)}" class="row gx-3 gy-3">
+                                    <div th:each="sol : ${solicitudes}" class="col-12 col-md-6 col-lg-4">
+                                        <div class="card bg-white bg-opacity-10 border border-white-10 p-3 rounded-4 h-100">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <span class="fw-bold text-white" th:text="'$' + ${#numbers.formatDecimal(sol.montoSolicitado, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+                                                <span class="badge bg-warning text-dark fw-bold rounded-pill small text-uppercase" th:text="${sol.estado}">APROBADO</span>
+                                            </div>
+                                            <div class="text-white-50 small font-monospace mb-3" th:text="${#temporals.format(sol.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</div>
+                                            <div class="rounded-4 bg-white bg-opacity-90 p-2 text-center">
+                                                <span class="small text-muted d-block text-start mb-1 font-monospace">FIRMA DIGITAL REGISTRADA:</span>
+                                                <img th:src="${sol.firmaBase64.startsWith('data:') ? sol.firmaBase64 : 'data:image/png;base64,' + sol.firmaBase64}" alt="Firma Digital" class="img-fluid rounded-3" style="max-height: 60px; object-fit: contain;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+         <script>
+        const canvas = document.getElementById('firmaPad');
+        const ctxFirma = canvas.getContext('2d');
+        let isDrawing = false;
+        let trazadoRealizado = false;
+
+        if (canvas) {
+            canvas.style.touchAction = 'none';
+            canvas.style.userSelect = 'none';
+            canvas.style.display = 'block';
+        }
+
+        // Configuración de resolución real del canvas
+        function ajustarResolucionCanvas() {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = 200; // Altura fija
+            
+            // Re-configurar pincel tras ajustar resolución
+            ctxFirma.lineWidth = 3;
+            ctxFirma.lineCap = 'round';
+            ctxFirma.lineJoin = 'round';
+            ctxFirma.strokeStyle = '#00ffcc'; // Color verde neón bancario
+        }
+
+        window.addEventListener('resize', ajustarResolucionCanvas);
+        ajustarResolucionCanvas();
+
+        function iniciarDibujo(event) {
+            if (!canvas) return;
+            isDrawing = true;
+            ctxFirma.beginPath();
+            const pos = obtenerCoordenadas(event);
+            ctxFirma.moveTo(pos.x, pos.y);
+        }
+
+        function dibujar(event) {
+            if (!isDrawing) return;
+            const pos = obtenerCoordenadas(event);
+            ctxFirma.lineTo(pos.x, pos.y);
+            ctxFirma.stroke();
+            trazadoRealizado = true;
+        }
+
+        if (canvas) {
+            canvas.addEventListener('mousedown', iniciarDibujo);
+            canvas.addEventListener('mousemove', dibujar);
+            canvas.addEventListener('mouseup', () => { isDrawing = false; });
+            canvas.addEventListener('mouseout', () => { isDrawing = false; });
+
+            canvas.addEventListener('touchstart', (e) => {
+                isDrawing = true;
+                ctxFirma.beginPath();
+                const pos = obtenerCoordenadas(e.touches[0]);
+                ctxFirma.moveTo(pos.x, pos.y);
+                trazadoRealizado = true;
+                e.preventDefault();
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (!isDrawing) return;
+                const pos = obtenerCoordenadas(e.touches[0]);
+                ctxFirma.lineTo(pos.x, pos.y);
+                ctxFirma.stroke();
+                trazadoRealizado = true;
+                e.preventDefault();
+            });
+
+            canvas.addEventListener('touchend', () => { isDrawing = false; });
+            canvas.addEventListener('pointerdown', iniciarDibujo);
+            canvas.addEventListener('pointermove', (e) => {
+                if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
+                    dibujar(e);
+                }
+            });
+            canvas.addEventListener('pointerup', () => { isDrawing = false; });
+        }
+
+        // Helper para mapear coordenadas correctas del lienzo
+        function obtenerCoordenadas(event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+        }
+
+        // Limpia el lienzo
+        function limpiarFirma() {
+            ctxFirma.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('firmaBase64').value = "";
+            trazadoRealizado = false;
+        }
+
+        // Simula la validación de trazo
+        function confirmarFirmaCapturada() {
+            if (!trazadoRealizado) {
+                alert("Dibuja tu firma en el lienzo primero.");
+                return;
+            }
+            const base64 = canvas.toDataURL("image/png");
+            document.getElementById('firmaBase64').value = base64;
+            alert("Firma digital validada e inyectada con éxito.");
+        }
+
+        // Prepara el envío de formulario
+        function prepararEnvioForm() {
+            if (!trazadoRealizado) {
+                alert("Debes estampar tu firma de conformidad electrónica.");
+                return false;
+            }
+            // Extraer base64 e inyectar al hidden field
+            const base64 = canvas.toDataURL("image/png");
+            document.getElementById('firmaBase64').value = base64;
+            return true;
+        }
+    </script>
+    </section>
+           
+   
+</body>
+
+</html>

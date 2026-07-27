@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Movimientos - Panel Ejecutivo', ~{::section})}">
+<head>
+    <title>Movimientos</title>
+</head>
+<body>
+
+    <section class="movimientos-panel">
+
+        <div th:if="${exito}"
+             class="alert alert-success d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="fa-solid fa-circle-check fs-5"></i>
+            <div th:text="${exito}">Operación exitosa</div>
+        </div>
+
+        <div th:if="${error}"
+             class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="fa-solid fa-circle-exclamation fs-5"></i>
+            <div th:text="${error}">Error en la Operación</div>
+        </div>
+
+        <div class="admin-hero mb-4">
+            <div>
+                <span class="admin-kicker">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    Control de operaciones
+                </span>
+                <h2 class="admin-title">Movimientos Bancarios</h2>
+                <p class="admin-text">
+                    Visualiza, autoriza y cancela movimientos de todos los clientes. 
+                    Las cancelaciones revierten automáticamente los fondos a la cuenta de origen.
+                </p>
+            </div>
+
+            <div class="admin-hero-badge">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span th:text="${#lists.size(movimientos)} + ' movimientos'"></span>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-md-4">
+                <div class="admin-card stat-card primary">
+                    <div class="stat-icon"><i class="fa-solid fa-list"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="${#lists.size(movimientos)}">0</h3>
+                        <p class="stat-label">Total movimientos</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="admin-card stat-card success">
+                    <div class="stat-icon"><i class="fa-solid fa-check-circle"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="${#lists.size(movimientos) > 0 ? #lists.size(movimientos) : 0}">0</h3>
+                        <p class="stat-label">Por gestionar</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="admin-card stat-card warning">
+                    <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="${#lists.size(movimientos)}">0</h3>
+                        <p class="stat-label">Registrados hoy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card p-0 overflow-hidden">
+            <div class="card-head px-4 pt-4 pb-0">
+                <h4>Listado completo de movimientos</h4>
+                <span class="pill muted">Todas las operaciones</span>
+            </div>
+            <div class="table-responsive admin-table-wrapper m-3 mt-0" style="border: 1px solid #e2eaf3; border-radius: 16px; overflow: hidden;">
+                <table class="table admin-table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Origen / Destino</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Descripción</th>
+                            <th scope="col" class="text-end">Monto</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(movimientos)}">
+                            <td colspan="8" class="text-muted text-center py-5">
+                                <i class="fa-solid fa-inbox fs-2 d-block mb-2" style="color: #c0d0e0;"></i>
+                                No hay movimientos registrados por el momento.
+                            </td>
+                        </tr>
+                        <tr th:each="mov : ${movimientos}" class="mov-row">
+                            <!-- Cliente -->
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="client-avatar" th:text="${#strings.substring(mov.nombreCliente, 0, 1)}">A</div>
+                                    <div>
+                                        <div class="fw-semibold" style="color: #18304a;" th:text="${mov.nombreCliente}">Cliente</div>
+                                        <div class="small text-muted" th:text="${mov.cuentaOrigen != 'CRÉDITO-BANCO' ? mov.cuentaOrigen : mov.cuentaDestino}">CLABE</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Fecha -->
+                            <td>
+                                <div class="small" th:if="${mov.fecha != null}">
+                                    <span class="fw-semibold d-block" style="color: #18304a;" th:text="${#temporals.format(mov.fecha, 'dd/MM/yyyy')}">01/01/2026</span>
+                                    <span class="text-muted" th:text="${#temporals.format(mov.fecha, 'HH:mm')}">14:30</span>
+                                </div>
+                                <span th:if="${mov.fecha == null}" class="small text-muted">—</span>
+                            </td>
+                            <!-- Origen / Destino -->
+                            <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <div class="d-flex align-items-center gap-1 small">
+                                        <i class="fa-solid fa-arrow-up text-danger" style="font-size: 0.65rem;"></i>
+                                        <span class="text-muted" style="font-size: 0.75rem;" th:text="${mov.cuentaOrigen}">Origen</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1 small">
+                                        <i class="fa-solid fa-arrow-down text-success" style="font-size: 0.65rem;"></i>
+                                        <span class="text-muted" style="font-size: 0.75rem;" th:text="${mov.cuentaDestino}">Destino</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tipo -->
+                            <td>
+                                <span class="badge rounded-pill" 
+                                      th:classappend="${mov.tipo == 'TRANSFERENCIA' ? 'bg-primary' : (mov.tipo == 'CREDITO' ? 'bg-success' : 'bg-secondary')}"
+                                      th:text="${mov.tipo}">
+                                </span>
+                            </td>
+                            <!-- Descripción -->
+                            <td>
+                                <span class="small" style="color: #4b5d73; max-width: 160px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                                      th:text="${mov.descripcion}">Descripción</span>
+                            </td>
+                            <!-- Monto -->
+                            <td class="text-end">
+                                <span class="fw-bold" style="color: #18304a;" 
+                                      th:text="${#numbers.formatCurrency(mov.monto)}">
+                                    $0.00
+                                </span>
+                            </td>
+                            <!-- Estado -->
+                            <td>
+                                <span class="badge rounded-pill" 
+                                      th:classappend="${mov.estadoMovimiento == 'autorizado' ? 'bg-success' : (mov.estadoMovimiento == 'cancelado' ? 'bg-danger' : 'bg-warning text-dark')}"
+                                      th:text="${mov.estadoMovimiento}">
+                                </span>
+                                <div class="small text-muted mt-1" th:text="${mov.estado}"></div>
+                            </td>
+                            <!-- Acciones -->
+                            <td class="text-center">
+                                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                    <!-- Botón Autorizar: aparece si estadoMovimiento != 'autorizado' -->
+                                    <form th:if="${mov.estadoMovimiento != 'autorizado'}" 
+                                          th:action="@{/admin/movimientos/autorizar}" method="post" style="display:inline;">
+                                        <input type="hidden" name="movimientoId" th:value="${mov.id}" />
+                                        <button type="submit" class="btn btn-sm btn-outline-success rounded-pill" 
+                                                onclick="return confirm('¿Autorizar este movimiento?')"
+                                                title="Autorizar movimiento">
+                                            <i class="fa-solid fa-check"></i> Autorizar
+                                        </button>
+                                    </form>
+                                    <!-- Botón Cancelar: aparece si estadoMovimiento != 'cancelado' -->
+                                    <form th:if="${mov.estadoMovimiento != 'cancelado'}" 
+                                          th:action="@{/admin/movimientos/cancelar}" method="post" style="display:inline;">
+                                        <input type="hidden" name="movimientoId" th:value="${mov.id}" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"
+                                                onclick="return confirm('¿Estás seguro de cancelar este movimiento? Se revertirán los fondos automáticamente.')"
+                                                title="Cancelar movimiento">
+                                            <i class="fa-solid fa-ban"></i> Cancelar
+                                        </button>
+                                    </form>
+                                    <!-- Botón Eliminar: aparece siempre -->
+                                    <form th:action="@{/admin/movimientos/eliminar}" method="post" style="display:inline;">
+                                        <input type="hidden" name="movimientoId" th:value="${mov.id}" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill"
+                                                onclick="return confirm('¿Estás seguro de eliminar este movimiento? Esta acción no se puede deshacer.')"
+                                                title="Eliminar movimiento">
+                                            <i class="fa-solid fa-trash-can"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </section>
+
+</body>
+</html>

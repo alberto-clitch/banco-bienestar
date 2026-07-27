@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(title='Abrir Cuenta', content=~{::section})}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Nueva Cuenta</title>
+</head>
+<body>
+
+    <section class="d-flex align-items-center justify-content-center my-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-10 col-lg-8">
+                    
+                    <div class="bg-white rounded shadow-sm p-4 p-md-5 border" style="border-color: #d4af37 !important;">
+                        
+                        <div class="mb-4">
+                            <h2 class="display-6 fw-light mb-2" style="color: #061a40;">
+                                Apertura de <span class="fw-bold" style="color: #b88a00;">Nueva Cuenta</span>
+                            </h2>
+                            <p class="text-muted small">Complete el siguiente formulario para dar de alta una cuenta en el sistema.</p>
+                            <hr style="border-top: 1px solid #d4af37; opacity: 0.5;">
+                        </div>
+
+                        <form action="#" method="POST">
+                            
+                            <h5 class="fw-bold mb-3" style="color: #061a40;">Información del Titular</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3">
+                                    <label for="nombreCliente" class="form-label small fw-bold" style="color: #061a40;">Nombre completo</label>
+                                    <input type="text" id="nombreCliente" class="form-control" placeholder="Ej. Juan Pérez López" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="identificacion" class="form-label small fw-bold" style="color: #061a40;">Identificación Oficial (INE)</label>
+                                    <input type="text" id="identificacion" class="form-control font-monospace" placeholder="Ej. ABCDE12345678M900" required>
+                                </div>
+                            </div>
+
+                            <h5 class="fw-bold mb-3" style="color: #061a40;">Detalles Financieros</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3">
+                                    <label for="tipoCuenta" class="form-label small fw-bold" style="color: #061a40;">Tipo de Cuenta</label>
+                                    <select id="tipoCuenta" class="form-select" required>
+                                        <option value="" selected disabled>Seleccione una opción...</option>
+                                        <option value="DEBITO">Cuenta de Débito Principal</option>
+                                        <option value="AHORRO">Cuenta de Ahorro Rendimiento</option>
+                                        <option value="NOMINA">Cuenta de Nómina</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="saldoInicial" class="form-label small fw-bold" style="color: #061a40;">Monto de Apertura (MXN)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light fw-bold" style="color: #061a40;">$</span>
+                                        <input type="number" step="0.01" min="0" id="saldoInicial" class="form-control text-end fw-bold" placeholder="0.00" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12 mb-3">
+                                    <label for="sucursal" class="form-label small fw-bold" style="color: #061a40;">Sucursal de Registro</label>
+                                    <input type="text" id="sucursal" class="form-control" placeholder="Ej. Centro Financiero">
+                                </div>
+                            </div>
+
+                            <div class="mb-4 p-3 rounded bg-light border">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terminos" required>
+                                    <label class="form-check-input-label small text-muted" for="terminos">
+                                        Confirmo que he validado la identidad del cliente y acepto los Términos de Privacidad y Seguridad Bancaria.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-3 pt-2">
+                                <a th:href="@{/login}" class="btn btn-light border fw-semibold px-4 py-2">
+                                    Cancelar
+                                </a>
+                                <button type="button" class="btn text-white fw-bold shadow-sm border-0 px-4 py-2" 
+                                        style="background: linear-gradient(135deg, #061a40, #0b2c5f, #123c7c);">
+                                    Registrar Cuenta
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

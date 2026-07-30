@@ -50,6 +50,11 @@
                             <i class="fa-solid fa-hand-holding-dollar"></i> Solicitudes de Crédito
                         </a>
                     </li>
+                    <li class="nav-item" sec:authorize="hasRole('CLIENTE')">
+                        <a class="nav-link nav-link-icon" th:href="@{/mis-creditos}">
+                            <i class="fa-solid fa-credit-card"></i> Mis Créditos
+                        </a>
+                    </li>
                     <li class="nav-item dropdown nav-separator-start" sec:authorize="hasRole('EJECUTIVO')">
                         <a class="nav-link dropdown-toggle nav-link-icon" href="#" id="adminDropdown" 
                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -78,11 +83,31 @@
                             </li>
                             <li><hr class="dropdown-divider my-1"></li>
                             <li>
+                                <a class="dropdown-item rounded-3" th:href="@{/admin/movimientos/transferencias}">
+                                    <i class="fa-solid fa-money-bill-transfer dropdown-icon"></i>
+                                    <div class="dropdown-item-content">
+                                        <span class="dropdown-item-title">Transferencias</span>
+                                        <span class="dropdown-item-desc">Supervisar transferencias de clientes</span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
                                 <a class="dropdown-item rounded-3" th:href="@{/admin/movimientos}">
                                     <i class="fa-solid fa-arrow-right-arrow-left dropdown-icon"></i>
                                     <div class="dropdown-item-content">
                                         <span class="dropdown-item-title">Movimientos</span>
                                         <span class="dropdown-item-desc">Autorizar y gestionar operaciones</span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item rounded-3" th:href="@{/admin/creditos-abonos}">
+                                    <i class="fa-solid fa-coins dropdown-icon"></i>
+                                    <div class="dropdown-item-content">
+                                        <span class="dropdown-item-title">Creditos y Abonos</span>
+                                        <span class="dropdown-item-desc">Monitorear pagos de creditos</span>
                                     </div>
                                 </a>
                             </li>

@@ -3,6 +3,7 @@ package com.example.bancobienestar.controller;
 import java.lang.annotation.Target;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 
@@ -28,6 +29,15 @@ public class TransferenciaController {
     }
     @GetMapping("/transferencias")
     public String mostrarFormTransferencias(Model modelo, Authentication auth) {
+        // Si el usuario es EJECUTIVO (admin), redirigir al panel de supervisión de transferencias
+        boolean isEjecutivo = auth.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .anyMatch(rol -> rol.equals("ROLE_EJECUTIVO"));
+        
+        if (isEjecutivo) {
+            return "redirect:/admin/movimientos/transferencias";
+        }
+        
         String username = auth.getName();
         UsuarioEntity usuario  = usuarioRepository.findByUsername(username)
         .orElseThrow(()-> new RuntimeException("Usuario no encontrado"));

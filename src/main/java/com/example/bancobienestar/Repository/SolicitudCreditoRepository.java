@@ -20,4 +20,7 @@ public interface SolicitudCreditoRepository extends JpaRepository<SolicitudCredi
 
     // Busca solicitudes por estado (ej. "PENDIENTE", "APROBADO", "RECHAZADO"), ordenadas por fecha descendente
     List<SolicitudCreditoEntity> findByEstadoOrderByFechaDesc(String estado);
+
+    // Busca solicitudes por usuario y estado, ordenadas por fecha descendente
+    List<SolicitudCreditoEntity> findByUsuarioAndEstadoOrderByFechaDesc(UsuarioEntity usuario, String estado);
 }

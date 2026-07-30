@@ -13,10 +13,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.bancobienestar.Repository.AbonoCreditoRepository;
 import com.example.bancobienestar.Repository.CuentaRepository;
 import com.example.bancobienestar.Repository.MovimientoCuentaRepository;
 import com.example.bancobienestar.Repository.SolicitudCreditoRepository;
 import com.example.bancobienestar.Repository.UsuarioRepository;
+import com.example.bancobienestar.entity.AbonoCreditoEntity;
 import com.example.bancobienestar.entity.CuentaEntity;
 import com.example.bancobienestar.entity.MovimientoEntity;
 import com.example.bancobienestar.entity.SolicitudCreditoEntity;
@@ -31,17 +33,20 @@ public class BancaService {
     private final CuentaRepository cuentaRepository;
     private final MovimientoCuentaRepository movimientoRepository;
     private final SolicitudCreditoRepository solicitudCreditoRepository;
+    private final AbonoCreditoRepository abonoCreditoRepository;
     private final PasswordEncoder passwordEncoder;
 
     public BancaService(UsuarioRepository usuarioRepository,
                         CuentaRepository cuentaRepository,
                         MovimientoCuentaRepository movimientoRepository,
                         SolicitudCreditoRepository solicitudCreditoRepository,
+                        AbonoCreditoRepository abonoCreditoRepository,
                         @Lazy PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.cuentaRepository = cuentaRepository;
         this.movimientoRepository = movimientoRepository;
         this.solicitudCreditoRepository = solicitudCreditoRepository;
+        this.abonoCreditoRepository = abonoCreditoRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -160,7 +165,7 @@ public class BancaService {
         SolicitudCreditoEntity solicitud = solicitudCreditoRepository.findById(solicitudId)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
-        // Si se aprueba, abonar a la cuenta
+        // Si se aprueba, abonar a la cuenta y establecer saldo pendiente
         if ("APROBADO".equals(nuevoEstado) && !"APROBADO".equals(solicitud.getEstado())) {
             UsuarioEntity usuario = solicitud.getUsuario();
             if (usuario.getCuentas() != null && !usuario.getCuentas().isEmpty()) {
@@ -170,16 +175,19 @@ public class BancaService {
 
                 // Registrar movimiento
                 MovimientoEntity movimiento = new MovimientoEntity();
-                movimiento.setCuentaOrigen("CRÉDITO-BANCO");
+                movimiento.setCuentaOrigen("CREDITO-BANCO");
                 movimiento.setCuentaDestino(cuenta.getClabe());
                 movimiento.setMonto(solicitud.getMontoSolicitado());
-                movimiento.setDescripcion("Abono de Crédito Aprobado");
+                movimiento.setDescripcion("Abono de Credito Aprobado");
                 movimiento.setFecha(LocalDateTime.now());
                 movimiento.setTipo("CREDITO");
                 movimiento.setEstado("COMPLETADO");
                 movimiento.setEstadoMovimiento("autorizado");
                 movimientoRepository.save(movimiento);
             }
+
+            // Inicializar saldo pendiente igual al monto solicitado
+            solicitud.setSaldoPendiente(solicitud.getMontoSolicitado());
         }
 
         solicitud.setEstado(nuevoEstado);
@@ -192,7 +200,244 @@ public class BancaService {
     }
 
     // ============================================================
-    // 5. OBTENER TODOS LOS MOVIMIENTOS CON NOMBRE DE CLIENTE
+    // 5. OBTENER CREDITOS APROBADOS DE UN USUARIO
+    // ============================================================
+
+    /**
+     * Obtiene los creditos aprobados de un usuario,
+     * incluyendo el total abonado y el saldo pendiente.
+     */
+    public List<Map<String, Object>> obtenerCreditosAprobados(String username) {
+        UsuarioEntity usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+
+        // Incluye tanto APROBADO como PAGADO para que el usuario vea el historial completo
+        List<SolicitudCreditoEntity> creditos = solicitudCreditoRepository
+                .findByUsuarioAndEstadoOrderByFechaDesc(usuario, "APROBADO");
+
+        // Tambien obtener los pagados
+        List<SolicitudCreditoEntity> pagados = solicitudCreditoRepository
+                .findByUsuarioAndEstadoOrderByFechaDesc(usuario, "PAGADO");
+        creditos.addAll(pagados);
+
+        double totalSaldoPendienteGlobal = 0.0;
+        long cantidadPagados = 0;
+
+        List<Map<String, Object>> resultado = new ArrayList<>();
+        for (SolicitudCreditoEntity credito : creditos) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", credito.getId());
+            item.put("folio", "CRD-" + String.format("%06d", credito.getId()));
+            item.put("montoSolicitado", credito.getMontoSolicitado());
+            item.put("fecha", credito.getFecha());
+
+            // Si saldoPendiente es null (creditos previos a la funcion), usar montoSolicitado
+            double saldoPendiente = credito.getSaldoPendiente() != null
+                    ? credito.getSaldoPendiente()
+                    : credito.getMontoSolicitado();
+            item.put("saldoPendiente", saldoPendiente);
+            item.put("estado", credito.getEstado());
+
+            // Calcular total abonado
+            List<AbonoCreditoEntity> abonos = abonoCreditoRepository.findBySolicitudCreditoOrderByFechaDesc(credito);
+            double totalAbonado = abonos.stream().mapToDouble(AbonoCreditoEntity::getMontoAbonado).sum();
+            item.put("totalAbonado", totalAbonado);
+            item.put("cantidadAbonos", abonos.size());
+            item.put("abonos", abonos);
+
+            // Porcentaje de pago para la barra de progreso
+            double porcentaje = credito.getMontoSolicitado() > 0
+                    ? (totalAbonado / credito.getMontoSolicitado()) * 100.0
+                    : 0.0;
+            item.put("porcentajePago", Math.min(porcentaje, 100.0));
+
+            // Acumular totales globales
+            totalSaldoPendienteGlobal += saldoPendiente;
+            if ("PAGADO".equals(credito.getEstado()) || saldoPendiente <= 0) {
+                cantidadPagados++;
+            }
+
+            resultado.add(item);
+        }
+
+        // Agregar totales globales al final de la lista para que el template acceda via ${creditos[0].totalGlobal}
+        if (!resultado.isEmpty()) {
+            resultado.get(0).put("totalSaldoPendienteGlobal", totalSaldoPendienteGlobal);
+            resultado.get(0).put("cantidadPagados", cantidadPagados);
+            resultado.get(0).put("cantidadActivos", resultado.size() - cantidadPagados);
+        }
+        return resultado;
+    }
+
+    // ============================================================
+    // 6. REALIZAR ABONO A UN CREDITO
+    // ============================================================
+
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> realizarAbono(Long creditoId, Double monto, String username) {
+        if (monto <= 0) {
+            throw new IllegalArgumentException("El monto del abono debe ser mayor a cero.");
+        }
+
+        UsuarioEntity usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+
+        SolicitudCreditoEntity credito = solicitudCreditoRepository.findById(creditoId)
+                .orElseThrow(() -> new RuntimeException("Credito no encontrado."));
+
+        // Validar que el credito pertenezca al usuario
+        if (!credito.getUsuario().getId().equals(usuario.getId())) {
+            throw new RuntimeException("Este credito no pertenece al usuario autenticado.");
+        }
+
+        // Validar que el credito este aprobado
+        if (!"APROBADO".equals(credito.getEstado())) {
+            throw new RuntimeException("Solo se pueden abonar creditos aprobados.");
+        }
+
+        // Validar saldo pendiente (si es null, creditos previos a esta funcion, usar monto completo)
+        double saldoPendiente = credito.getSaldoPendiente() != null
+                ? credito.getSaldoPendiente()
+                : credito.getMontoSolicitado();
+        if (saldoPendiente <= 0) {
+            throw new RuntimeException("Este credito ya ha sido pagado completamente.");
+        }
+
+        // No permitir abonar mas del saldo pendiente
+        if (monto > saldoPendiente) {
+            throw new RuntimeException(
+                "El monto del abono ($ " + String.format("%,.2f", monto)
+                + ") supera el saldo pendiente ($ " + String.format("%,.2f", saldoPendiente) + ").");
+        }
+
+        // Obtener la cuenta del usuario para debitar
+        if (usuario.getCuentas() == null || usuario.getCuentas().isEmpty()) {
+            throw new RuntimeException("El usuario no tiene cuenta bancaria.");
+        }
+        CuentaEntity cuenta = usuario.getCuentas().get(0);
+
+        // Validar saldo suficiente en cuenta
+        if (cuenta.getSaldo() < monto) {
+            throw new FondosinsuficientesException(
+                "Saldo insuficiente. Tu saldo actual es $ " + String.format("%,.2f", cuenta.getSaldo()));
+        }
+
+        // 1. Debitar de la cuenta del cliente
+        cuenta.setSaldo(cuenta.getSaldo() - monto);
+        cuentaRepository.save(cuenta);
+
+        // 2. Actualizar saldo pendiente del credito
+        double nuevoSaldoPendiente = saldoPendiente - monto;
+        credito.setSaldoPendiente(nuevoSaldoPendiente);
+
+        // Si el saldo llega a 0, marcar como "PAGADO"
+        if (nuevoSaldoPendiente <= 0) {
+            credito.setEstado("PAGADO");
+            credito.setSaldoPendiente(0.0);
+        }
+        solicitudCreditoRepository.save(credito);
+
+        // 3. Registrar el abono
+        AbonoCreditoEntity abono = new AbonoCreditoEntity();
+        abono.setSolicitudCredito(credito);
+        abono.setMontoAbonado(monto);
+        abono.setFecha(LocalDateTime.now());
+        abono.setMetodoPago("TRANSFERENCIA");
+        abono.setClabeOrigen(cuenta.getClabe());
+        abonoCreditoRepository.save(abono);
+
+        // 4. Registrar movimiento
+        MovimientoEntity movimiento = new MovimientoEntity();
+        movimiento.setCuentaOrigen(cuenta.getClabe());
+        movimiento.setCuentaDestino("CREDITO-BANCO");
+        movimiento.setMonto(monto);
+        movimiento.setDescripcion("Abono a credito CRD-" + String.format("%06d", credito.getId()));
+        movimiento.setFecha(LocalDateTime.now());
+        movimiento.setTipo("ABONO_CREDITO");
+        movimiento.setEstado("COMPLETADO");
+        movimiento.setEstadoMovimiento("autorizado");
+        movimientoRepository.save(movimiento);
+
+        // Construir respuesta
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("exito", true);
+        respuesta.put("montoAbonado", monto);
+        respuesta.put("nuevoSaldoPendiente", nuevoSaldoPendiente < 0 ? 0.0 : nuevoSaldoPendiente);
+        respuesta.put("saldoCuenta", cuenta.getSaldo());
+        respuesta.put("creditoPagado", nuevoSaldoPendiente <= 0);
+
+        return respuesta;
+    }
+
+    // ============================================================
+    // 6b. OBTENER TODOS LOS CREDITOS CON ABONOS (para admin)
+    // ============================================================
+
+    /**
+     * Obtiene todos los creditos aprobados/pagados con informacion
+     * de abonos realizados, para la vista de administrador.
+     */
+    public List<Map<String, Object>> obtenerCreditosConAbonos() {
+        List<SolicitudCreditoEntity> todos = solicitudCreditoRepository.findAllByOrderByFechaDesc();
+        List<Map<String, Object>> resultado = new ArrayList<>();
+
+        double totalSaldoPendienteGlobal = 0.0;
+        long cantidadPagadosGlobal = 0;
+        long cantidadConAbonos = 0;
+
+        for (SolicitudCreditoEntity credito : todos) {
+            // Solo creditos aprobados o pagados
+            if (!"APROBADO".equals(credito.getEstado()) && !"PAGADO".equals(credito.getEstado())) {
+                continue;
+            }
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", credito.getId());
+            item.put("folio", "CRD-" + String.format("%06d", credito.getId()));
+            item.put("usuario", credito.getUsuario());
+            item.put("montoSolicitado", credito.getMontoSolicitado());
+            item.put("fecha", credito.getFecha());
+            item.put("estado", credito.getEstado());
+
+            double saldoPendiente = credito.getSaldoPendiente() != null
+                    ? credito.getSaldoPendiente()
+                    : credito.getMontoSolicitado();
+            item.put("saldoPendiente", saldoPendiente);
+
+            List<AbonoCreditoEntity> abonos = abonoCreditoRepository.findBySolicitudCreditoOrderByFechaDesc(credito);
+            double totalAbonado = abonos.stream().mapToDouble(AbonoCreditoEntity::getMontoAbonado).sum();
+            item.put("totalAbonado", totalAbonado);
+            item.put("cantidadAbonos", abonos.size());
+            item.put("abonos", abonos);
+
+            double porcentaje = credito.getMontoSolicitado() > 0
+                    ? (totalAbonado / credito.getMontoSolicitado()) * 100.0
+                    : 0.0;
+            item.put("porcentajePago", Math.min(porcentaje, 100.0));
+
+            // Acumular totales globales
+            totalSaldoPendienteGlobal += saldoPendiente;
+            if ("PAGADO".equals(credito.getEstado()) || saldoPendiente <= 0) {
+                cantidadPagadosGlobal++;
+            }
+            if (!abonos.isEmpty()) {
+                cantidadConAbonos++;
+            }
+
+            resultado.add(item);
+        }
+
+        // Almacenar totales globales en el primer elemento
+        if (!resultado.isEmpty()) {
+            resultado.get(0).put("totalSaldoPendienteGlobal", totalSaldoPendienteGlobal);
+            resultado.get(0).put("cantidadPagadosGlobal", cantidadPagadosGlobal);
+            resultado.get(0).put("cantidadConAbonos", cantidadConAbonos);
+        }
+        return resultado;
+    }
+
+    // ============================================================
+    // 5a. OBTENER TODOS LOS MOVIMIENTOS CON NOMBRE DE CLIENTE
     // ============================================================
     
     /**
@@ -241,7 +486,55 @@ public class BancaService {
     }
 
     // ============================================================
-    // 6. AUTORIZAR MOVIMIENTO
+    // 6a. OBTENER SOLO TRANSFERENCIAS CON NOMBRE DE CLIENTE
+    // ============================================================
+    
+    /**
+     * Obtiene solo los movimientos de tipo TRANSFERENCIA ordenados por fecha descendente,
+     * incluyendo el nombre del cliente asociado.
+     */
+    public List<Map<String, Object>> obtenerTransferencias() {
+        List<MovimientoEntity> movimientos = movimientoRepository.findAllByOrderByFechaDesc();
+        List<Map<String, Object>> resultado = new ArrayList<>();
+        
+        for (MovimientoEntity mov : movimientos) {
+            // Solo nos interesan las transferencias
+            if (!"TRANSFERENCIA".equals(mov.getTipo())) {
+                continue;
+            }
+            
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", mov.getId());
+            item.put("fecha", mov.getFecha());
+            item.put("cuentaOrigen", mov.getCuentaOrigen());
+            item.put("cuentaDestino", mov.getCuentaDestino());
+            item.put("monto", mov.getMonto());
+            item.put("descripcion", mov.getDescripcion());
+            item.put("tipo", mov.getTipo());
+            item.put("estado", mov.getEstado());
+            item.put("estadoMovimiento", mov.getEstadoMovimiento());
+            
+            // Buscar nombre del cliente asociado a la cuenta de origen
+            String nombreCliente = "Desconocido";
+            try {
+                if (mov.getCuentaOrigen() != null && !mov.getCuentaOrigen().isEmpty()) {
+                    Optional<CuentaEntity> cuentaOpt = cuentaRepository.findByClabe(mov.getCuentaOrigen());
+                    if (cuentaOpt.isPresent()) {
+                        nombreCliente = cuentaOpt.get().getUsuario().getNombre();
+                    }
+                }
+            } catch (Exception e) {
+                nombreCliente = "N/A";
+            }
+            item.put("nombreCliente", nombreCliente);
+            resultado.add(item);
+        }
+        
+        return resultado;
+    }
+
+    // ============================================================
+    // 7. AUTORIZAR MOVIMIENTO
     // ============================================================
     
     @Transactional(rollbackFor = Exception.class)

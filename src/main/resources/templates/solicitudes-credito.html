@@ -95,12 +95,13 @@
                             <th scope="col">Firma</th>
                             <th scope="col">Fecha</th>
                             <th scope="col">Estado</th>
+                            <th scope="col">PDF</th>
                             <th scope="col" th:if="${esEjecutivo}">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:if="${#lists.isEmpty(solicitudes)}">
-                            <td colspan="7" class="text-muted text-center py-5">
+                            <td colspan="8" class="text-muted text-center py-5">
                                 <div class="mb-2"><i class="fa-solid fa-folder-open fs-2 text-muted"></i></div>
                                 Sin solicitudes registradas por el momento.
                             </td>
@@ -130,6 +131,13 @@
                                 <span class="badge rounded-pill px-3 py-2" 
                                       th:classappend="${solicitud.estado == 'APROBADO' ? 'bg-success' : (solicitud.estado == 'RECHAZADO' ? 'bg-danger' : 'bg-warning text-dark')}"
                                       th:text="${solicitud.estado}">PENDIENTE</span>
+                            </td>
+                            <td>
+                                <a th:href="@{'/solicitudes-credito/' + ${solicitud.id} + '/descargar-pdf'}" 
+                                   class="btn btn-outline-primary btn-sm rounded-pill"
+                                   style="border-width: 1.5px; font-size: 0.72rem;">
+                                    <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                                </a>
                             </td>
                             <td th:if="${esEjecutivo}">
                                 <div th:if="${solicitud.estado == 'PENDIENTE'}" class="d-flex gap-2 flex-wrap">

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Mis Creditos', ~{::section})}">
+<head>
+    <title>Mis Creditos</title>
+</head>
+<body>
+
+    <section class="admin-panel">
+
+        <div th:if="${param.exito}"
+             class="alert alert-success d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="fa-solid fa-circle-check fs-5"></i>
+            <div th:text="${param.exito}">Operacion exitosa</div>
+        </div>
+
+        <div th:if="${param.error}"
+             class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="fa-solid fa-circle-exclamation fs-5"></i>
+            <div th:text="${param.error}">Error en la Operacion</div>
+        </div>
+
+        <div class="admin-hero mb-4">
+            <div>
+                <span class="admin-kicker">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    Creditos
+                </span>
+                <h2 class="admin-title">Mis Creditos</h2>
+                <p class="admin-text">
+                    Revisa el estado de tus creditos y realiza abonos para saldar tu deuda.
+                </p>
+            </div>
+
+            <div class="admin-hero-badge">
+                <i class="fa-solid fa-credit-card"></i>
+                <span th:text="${#lists.size(creditos)} + ' creditos'">0 creditos</span>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="admin-card stat-card primary">
+                    <div class="stat-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="${#lists.size(creditos)}">0</h3>
+                        <p class="stat-label">Creditos totales</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="admin-card stat-card warning" th:if="${not #lists.isEmpty(creditos)}">
+                    <div class="stat-icon"><i class="fa-solid fa-coins"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="'$ ' + ${#numbers.formatDecimal(creditos[0].totalSaldoPendienteGlobal, 1, 'COMMA', 2, 'POINT')}">$0.00</h3>
+                        <p class="stat-label">Saldo pendiente total</p>
+                    </div>
+                </div>
+                <div class="admin-card stat-card warning" th:if="${#lists.isEmpty(creditos)}">
+                    <div class="stat-icon"><i class="fa-solid fa-coins"></i></div>
+                    <div>
+                        <h3 class="stat-value">$0.00</h3>
+                        <p class="stat-label">Saldo pendiente total</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4" th:if="${not #lists.isEmpty(creditos)}">
+                <div class="admin-card stat-card success">
+                    <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+                    <div>
+                        <h3 class="stat-value" th:text="${creditos[0].cantidadActivos}">0</h3>
+                        <p class="stat-label">Creditos activos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4" th:if="${#lists.isEmpty(creditos)}">
+                <div class="admin-card stat-card secondary">
+                    <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+                    <div>
+                        <h3 class="stat-value">0</h3>
+                        <p class="stat-label">Creditos activos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(creditos)}" class="admin-card">
+            <div class="text-center py-5">
+                <div class="mb-3"><i class="fa-solid fa-folder-open fs-1 text-muted"></i></div>
+                <h5 class="text-muted">No tienes creditos aun.</h5>
+                <p class="text-muted small">Solicita un credito desde la seccion de Solicitudes de Credito.</p>
+                <a th:href="@{/credito}" class="btn btn-primary rounded-pill px-4 mt-2">
+                    <i class="fa-solid fa-plus me-1"></i> Solicitar credito
+                </a>
+            </div>
+        </div>
+
+        <div th:each="credito : ${creditos}" class="admin-card mb-4">
+            <div class="card-head">
+                <h4>
+                    <i class="fa-solid fa-file-invoice-dollar me-2"></i>
+                    Credito <span th:text="${credito.folio}">CRD-000000</span>
+                </h4>
+                <span class="badge rounded-pill px-3 py-2"
+                      th:classappend="${credito.estado == 'PAGADO' ? 'bg-success' : 'bg-primary'}"
+                      th:text="${credito.estado}">APROBADO</span>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase fw-semibold mb-1">Monto solicitado</div>
+                    <div class="fw-bold fs-5" style="color: #061a40;"
+                         th:text="'$ ' + ${#numbers.formatDecimal(credito.montoSolicitado, 1, 'COMMA', 2, 'POINT')}">
+                        $0.00</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase fw-semibold mb-1">Total abonado</div>
+                    <div class="fw-bold fs-5" style="color: #0f766e;"
+                         th:text="'$ ' + ${#numbers.formatDecimal(credito.totalAbonado, 1, 'COMMA', 2, 'POINT')}">
+                        $0.00</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase fw-semibold mb-1">Saldo pendiente</div>
+                    <div class="fw-bold fs-5"
+                         th:classappend="${credito.saldoPendiente > 0 ? 'text-danger' : 'text-success'}"
+                         th:text="'$ ' + ${#numbers.formatDecimal(credito.saldoPendiente, 1, 'COMMA', 2, 'POINT')}">
+                        $0.00</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase fw-semibold mb-1">Fecha de aprobacion</div>
+                    <div class="fw-semibold"
+                         th:text="${#temporals.format(credito.fecha, 'dd/MM/yyyy')}">--</div>
+                </div>
+            </div>
+
+            <!-- Barra de progreso de pago -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-muted">Progreso de pago</span>
+                    <span class="fw-semibold"
+                          th:text="${credito.porcentajePago} + '%'">0%</span>
+                </div>
+                <div class="progress" style="height: 8px; border-radius: 4px;">
+                    <div class="progress-bar"
+                         th:classappend="${credito.saldoPendiente <= 0 ? 'bg-success' : 'bg-primary'}"
+                         role="progressbar"
+                         th:style="'width: ' + ${credito.porcentajePago} + '%'"
+                         th:attr="aria-valuenow=${credito.porcentajePago}"
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de abonos -->
+            <div th:if="${not #lists.isEmpty(credito.abonos)}" class="mb-4">
+                <h6 class="fw-bold mb-3" style="color: #061a40;">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i> Historial de abonos
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless mb-0">
+                        <thead>
+                            <tr class="small text-muted">
+                                <th>Fecha</th>
+                                <th>Monto</th>
+                                <th>Metodo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="abono : ${credito.abonos}">
+                                <td class="small" th:text="${#temporals.format(abono.fecha, 'dd/MM/yyyy HH:mm')}">--</td>
+                                <td class="fw-semibold"
+                                    th:text="'$ ' + ${#numbers.formatDecimal(abono.montoAbonado, 1, 'COMMA', 2, 'POINT')}">
+                                    $0.00</td>
+                                <td class="small" th:text="${abono.metodoPago}">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Formulario de abono (solo si no esta pagado) -->
+            <div th:if="${credito.saldoPendiente > 0}"
+                 class="border-top pt-3 mt-2">
+                <form th:action="@{/realizar-abono}" method="post" class="row g-3 align-items-end">
+                    <input type="hidden" name="creditoId" th:value="${credito.id}" />
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small mb-1">
+                            <i class="fa-solid fa-money-bill-wave me-1"></i> Cantidad a abonar
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="monto" class="form-control"
+                                   placeholder="Ej. 500.00"
+                                   th:attr="max=${credito.saldoPendiente}"
+                                   step="0.01" min="0.01" required />
+                        </div>
+                        <small class="text-muted">
+                            Saldo pendiente: $ <span th:text="${#numbers.formatDecimal(credito.saldoPendiente, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </small>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary rounded-pill w-100"
+                                style="background: linear-gradient(135deg, #061a40, #123c7c); border: none;">
+                            <i class="fa-solid fa-check me-1"></i> Abonar
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill w-100"
+                                th:attr="data-monto-total=${credito.saldoPendiente}"
+                                onclick="this.closest('form').querySelector('[name=monto]').value = this.getAttribute('data-monto-total')">
+                            <i class="fa-solid fa-fill-drip me-1"></i> Pagar todo
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div th:if="${credito.saldoPendiente <= 0}"
+                 class="border-top pt-3 mt-2 text-center">
+                <span class="badge bg-success rounded-pill fs-6 px-4 py-2">
+                    <i class="fa-solid fa-circle-check me-1"></i> Credito pagado completamente
+                </span>
+            </div>
+        </div>
+
+    </section>
+
+</body>
+</html>

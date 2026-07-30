@@ -23,6 +23,10 @@ public class MovimientoAdminController {
         this.bancaService = bancaService;
     }
 
+    // ============================================================
+    // LISTAR TODOS LOS MOVIMIENTOS
+    // ============================================================
+    
     @GetMapping
     public String listaMovimientos(Model modelo) {
         List<Map<String, Object>> movimientos = bancaService.obtenerTodosMovimientos();
@@ -30,8 +34,24 @@ public class MovimientoAdminController {
         return "movimientos";
     }
 
+    // ============================================================
+    // LISTAR SOLO TRANSFERENCIAS
+    // ============================================================
+    
+    @GetMapping("/transferencias")
+    public String listaTransferencias(Model modelo) {
+        List<Map<String, Object>> transferencias = bancaService.obtenerTransferencias();
+        modelo.addAttribute("transferencias", transferencias);
+        return "admin-transferencias";
+    }
+
+    // ============================================================
+    // AUTORIZAR MOVIMIENTO
+    // ============================================================
+    
     @PostMapping("/autorizar")
     public String autorizarMovimiento(@RequestParam("movimientoId") Long movimientoId,
+                                      @RequestParam(value = "origin", required = false, defaultValue = "movimientos") String origin,
                                       RedirectAttributes redirectAttributes) {
         try {
             bancaService.autorizarMovimiento(movimientoId);
@@ -39,11 +59,15 @@ public class MovimientoAdminController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error al autorizar: " + e.getMessage());
         }
+        if ("transferencias".equals(origin)) {
+            return "redirect:/admin/movimientos/transferencias";
+        }
         return "redirect:/admin/movimientos";
     }
 
     @PostMapping("/cancelar")
     public String cancelarMovimiento(@RequestParam("movimientoId") Long movimientoId,
+                                     @RequestParam(value = "origin", required = false, defaultValue = "movimientos") String origin,
                                      RedirectAttributes redirectAttributes) {
         try {
             bancaService.cancelarMovimiento(movimientoId);
@@ -51,17 +75,24 @@ public class MovimientoAdminController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error al cancelar: " + e.getMessage());
         }
+        if ("transferencias".equals(origin)) {
+            return "redirect:/admin/movimientos/transferencias";
+        }
         return "redirect:/admin/movimientos";
     }
 
     @PostMapping("/eliminar")
     public String eliminarMovimiento(@RequestParam("movimientoId") Long movimientoId,
+                                     @RequestParam(value = "origin", required = false, defaultValue = "movimientos") String origin,
                                      RedirectAttributes redirectAttributes) {
         try {
             bancaService.eliminarMovimiento(movimientoId);
             redirectAttributes.addFlashAttribute("exito", "Movimiento eliminado correctamente");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error al eliminar: " + e.getMessage());
+        }
+        if ("transferencias".equals(origin)) {
+            return "redirect:/admin/movimientos/transferencias";
         }
         return "redirect:/admin/movimientos";
     }

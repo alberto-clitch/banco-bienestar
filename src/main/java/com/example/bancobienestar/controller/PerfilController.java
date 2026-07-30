@@ -1,8 +1,13 @@
 package com.example.bancobienestar.controller;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.security.Principal;
 import java.util.Base64;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -60,27 +65,48 @@ public class PerfilController {
         
         try {
             if (foto.isEmpty()) {
-                throw new RuntimeException("No se seleccionó ningún archivo.");
+                throw new RuntimeException("No se selecciono ningun archivo.");
             }
             
             // Validar tipo de archivo
             String contentType = foto.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                throw new RuntimeException("Solo se permiten archivos de imagen (JPG, PNG, GIF, WEBP).");
+                throw new RuntimeException("Solo se permiten archivos de imagen.");
             }
             
-            // Validar tamaño máximo (5MB)
+            // Validar tamano maximo (5MB)
             if (foto.getSize() > 5 * 1024 * 1024) {
                 throw new RuntimeException("La imagen no puede superar los 5MB.");
             }
             
-            // Convertir a Base64 con prefijo data:image/...
-            byte[] bytes = foto.getBytes();
-            String base64 = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+            // Leer los bytes originales
+            byte[] bytesOriginales = foto.getBytes();
+            
+            // Intentar leer la imagen con ImageIO (soporta PNG, JPG, GIF, BMP, WBMP)
+            BufferedImage imagenLeida = ImageIO.read(new ByteArrayInputStream(bytesOriginales));
+            if (imagenLeida == null) {
+                throw new RuntimeException(
+                        "Formato de imagen no soportado. "
+                        + "Usa PNG, JPG o GIF. Si tu foto es AVIF o HEIC, "
+                        + "conviertela a PNG antes de subirla.");
+            }
+            
+            // Convertir la imagen a PNG
+            ByteArrayOutputStream pngBaos = new ByteArrayOutputStream();
+            ImageIO.write(imagenLeida, "png", pngBaos);
+            byte[] bytesPng = pngBaos.toByteArray();
+            
+            // Codificar como Base64 con prefijo data:image/png
+            String base64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytesPng);
             
             String username = principal.getName();
             bancaService.actualizarFotoPerfil(username, base64);
-            redirectAttributes.addFlashAttribute("exito", "Foto de perfil actualizada correctamente.");
+            
+            String tamanoOriginal = String.format("%.1f", bytesOriginales.length / 1024.0);
+            String tamanoPng = String.format("%.1f", bytesPng.length / 1024.0);
+            redirectAttributes.addFlashAttribute("exito",
+                    "Foto de perfil actualizada y convertida a PNG correctamente "
+                    + "(" + tamanoOriginal + "KB -> " + tamanoPng + "KB).");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error al subir foto: " + e.getMessage());
         }

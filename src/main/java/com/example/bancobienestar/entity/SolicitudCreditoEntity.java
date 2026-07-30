@@ -40,6 +40,8 @@ public class SolicitudCreditoEntity {
     @Column(nullable = false)
     private LocalDateTime fecha;
 
-   
+    // Saldo pendiente por pagar (se inicializa igual al monto solicitado al aprobar)
+    @Column(name = "saldo_pendiente")
+    private Double saldoPendiente;
 
 }

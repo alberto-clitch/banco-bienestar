@@ -1,6 +1,7 @@
 package com.example.bancobienestar.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
@@ -32,6 +33,13 @@ public class AdminController {
         this.usuarioRepository = usuarioRepository;
         this.solicitudCreditoRepository = solicitudCreditoRepository;
     }
+     @GetMapping("/creditos-abonos")
+     public String mostrarCreditosAbonos(Model modelo) {
+         List<Map<String, Object>> creditosConAbonos = bancaService.obtenerCreditosConAbonos();
+         modelo.addAttribute("creditos", creditosConAbonos);
+         return "admin-creditos-abonos";
+     }
+
      @GetMapping("/dashboard")
      public String mostrarDashboard(Model modelo){
         List<UsuarioEntity> clientes = usuarioRepository.findAll().stream()
@@ -40,8 +48,12 @@ public class AdminController {
             List<SolicitudCreditoEntity> solicitudes = 
             solicitudCreditoRepository.findAllByOrderByFechaDesc();
 
+            // Obtener creditos con abonos para el panel
+            List<Map<String, Object>> creditosConAbonos = bancaService.obtenerCreditosConAbonos();
+
             modelo.addAttribute("clientes", clientes);
             modelo.addAttribute("solicitudes", solicitudes);
+            modelo.addAttribute("creditosConAbonos", creditosConAbonos);
 
            
          return "admin";
@@ -72,7 +84,7 @@ public class AdminController {
                         return "redirect:/admin/dashboard?error=Campos incompletos";
                     }
                     if(saldoInicial == null || saldoInicial < 0) {
-                        return "redirect:/admin/dashboard?error=Saldo inicial inválido";
+                        return "redirect:/admin/dashboard?error=Saldo inicial invalido";
                     }
                     try{
                         bancaService.crearClienteConCuenta(nombre, username, password, saldoInicial);

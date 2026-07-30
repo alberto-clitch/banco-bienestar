@@ -143,9 +143,19 @@
                             <!-- Estado Cuenta -->
                             <td class="text-center">
                                 <span th:if="${user.totalCuentas > 0}" 
-                                      class="badge rounded-pill bg-success">Activa</span>
+                                      class="badge rounded-pill bg-success d-block mb-2">Activa</span>
                                 <span th:if="${user.totalCuentas == 0}" 
-                                      class="badge rounded-pill bg-secondary">Sin cuenta</span>
+                                      class="badge rounded-pill bg-secondary d-block mb-2">Sin cuenta</span>
+                                <!-- Botón descargar PDF estado de cuenta (solo para clientes con cuenta) -->
+                                <a th:if="${user.totalCuentas > 0}" 
+                                   th:href="@{'/admin/usuarios/' + ${user.id} + '/descargar-estado-cuenta'}" 
+                                   class="btn btn-sm"
+                                   style="background: linear-gradient(135deg, #061a40, #0b2c5f); color: white; border-radius: 6px; padding: 4px 10px; text-decoration: none; font-size: 0.72rem; font-weight: 600; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px;"
+                                   onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)'"
+                                   onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'"
+                                   title="Descargar estado de cuenta PDF">
+                                    <i class="fa-solid fa-file-pdf"></i> PDF
+                                </a>
                             </td>
                             <!-- Acciones -->
                             <td class="text-center">

@@ -2,6 +2,7 @@ package com.example.bancobienestar.service;
 
 import com.example.bancobienestar.Repository.AbonoCreditoRepository;
 import com.example.bancobienestar.entity.AbonoCreditoEntity;
+import com.example.bancobienestar.entity.MovimientoEntity;
 import com.example.bancobienestar.entity.SolicitudCreditoEntity;
 import com.example.bancobienestar.entity.UsuarioEntity;
 import com.lowagie.text.*;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.List;
 import javax.imageio.ImageIO;
 
 /**
@@ -357,6 +359,311 @@ public class PdfGeneratorService {
     // ================================================================
     // METODOS AUXILIARES
     // ================================================================
+
+    /**
+     * Genera un PDF con el estado de cuenta del cliente: informacion basica
+     * y tabla de movimientos recientes.
+     *
+     * @param usuario       El cliente autenticado
+     * @param cuentaClabe    La CLABE de su cuenta principal
+     * @param saldo          El saldo actual
+     * @param movimientos    Lista de movimientos a incluir
+     * @return Arreglo de bytes con el contenido del PDF
+     */
+    public byte[] generarPdfEstadoCuenta(UsuarioEntity usuario, String cuentaClabe,
+                                          Double saldo, List<MovimientoEntity> movimientos)
+            throws DocumentException, IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        Document document = new Document(PageSize.LETTER, 50, 50, 50, 50);
+        PdfWriter writer = PdfWriter.getInstance(document, baos);
+        writer.setPageEvent(new PdfPageEventHandler());
+
+        document.open();
+
+        // ================================================================
+        // ENCABEZADO: Logo + Banco + Fecha
+        // ================================================================
+        PdfPTable headerTable = new PdfPTable(2);
+        headerTable.setWidthPercentage(100);
+        headerTable.setWidths(new float[]{1, 2});
+        headerTable.setSpacingAfter(10);
+
+        PdfPCell logoCell = new PdfPCell();
+        logoCell.setBorder(Rectangle.NO_BORDER);
+        logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        logoCell.setPadding(5);
+
+        Paragraph bancoNombre = new Paragraph();
+        bancoNombre.add(new Phrase("BANCO DE MEXICO", new Font(Font.HELVETICA, 16, Font.BOLD, PRIMARY_DARK)));
+        bancoNombre.add(new Phrase("\n", new Font(Font.HELVETICA, 4)));
+        bancoNombre.add(new Phrase("Institucion de Banca Multiple", new Font(Font.HELVETICA, 9, Font.NORMAL, TEXT_MUTED)));
+        logoCell.addElement(bancoNombre);
+
+        headerTable.addCell(logoCell);
+
+        PdfPCell fechaCell = new PdfPCell();
+        fechaCell.setBorder(Rectangle.NO_BORDER);
+        fechaCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        fechaCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        fechaCell.setPadding(5);
+
+        Paragraph fechaPara = new Paragraph();
+        fechaPara.setAlignment(Element.ALIGN_RIGHT);
+        fechaPara.add(new Phrase("ESTADO DE CUENTA\n", SUBTITLE_FONT));
+        fechaPara.add(new Phrase("Generado: " + java.time.LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + "\n",
+                new Font(Font.HELVETICA, 9, Font.NORMAL, TEXT_MUTED)));
+        fechaPara.add(new Phrase("Documento electronico",
+                new Font(Font.HELVETICA, 8, Font.NORMAL, TEXT_MUTED)));
+        fechaCell.addElement(fechaPara);
+
+        headerTable.addCell(fechaCell);
+        document.add(headerTable);
+
+        // Linea divisoria decorativa
+        PdfPTable divider = new PdfPTable(1);
+        divider.setWidthPercentage(100);
+        PdfPCell dividerCell = new PdfPCell();
+        dividerCell.setBorder(Rectangle.NO_BORDER);
+        dividerCell.setFixedHeight(3);
+        dividerCell.setBackgroundColor(ACCENT_GOLD);
+        divider.addCell(dividerCell);
+        document.add(divider);
+
+        document.add(Chunk.NEWLINE);
+
+        // ================================================================
+        // TITULO DEL DOCUMENTO
+        // ================================================================
+        Paragraph docTitle = new Paragraph();
+        docTitle.setAlignment(Element.ALIGN_CENTER);
+        docTitle.add(new Phrase("ESTADO DE CUENTA BANCARIO\n", TITLE_FONT));
+        docTitle.add(new Phrase("Detalle de movimientos y saldos",
+                new Font(Font.HELVETICA, 11, Font.NORMAL, TEXT_MUTED)));
+        document.add(docTitle);
+
+        document.add(Chunk.NEWLINE);
+
+        // ================================================================
+        // SECCION 1: DATOS DEL CLIENTE
+        // ================================================================
+        document.add(crearSeccionHeader("DATOS DEL CLIENTE"));
+
+        PdfPTable datosTable = new PdfPTable(2);
+        datosTable.setWidthPercentage(100);
+        datosTable.setWidths(new float[]{1, 1});
+        datosTable.setSpacingBefore(8);
+        datosTable.setSpacingAfter(15);
+
+        PdfPCell infoCell = new PdfPCell();
+        infoCell.setBorder(Rectangle.BOX);
+        infoCell.setBorderColor(BORDER_COLOR);
+        infoCell.setPadding(12);
+        infoCell.setBackgroundColor(BG_LIGHT);
+
+        infoCell.addElement(crearCampo("Nombre completo", usuario.getNombre()));
+        infoCell.addElement(crearCampo("Usuario", usuario.getUsername()));
+        infoCell.addElement(crearCampo("CLABE", cuentaClabe));
+        infoCell.addElement(crearCampo("ID de cliente", "USR-" + String.format("%04d", usuario.getId())));
+
+        datosTable.addCell(infoCell);
+
+        PdfPCell saldoCell = new PdfPCell();
+        saldoCell.setBorder(Rectangle.BOX);
+        saldoCell.setBorderColor(BORDER_COLOR);
+        saldoCell.setPadding(12);
+        saldoCell.setBackgroundColor(BG_LIGHT);
+        saldoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+        Paragraph saldoPara = new Paragraph();
+        saldoPara.setAlignment(Element.ALIGN_CENTER);
+        saldoPara.add(new Phrase("SALDO DISPONIBLE\n", LABEL_FONT));
+        saldoPara.add(new Phrase("$ " + String.format("%,.2f", saldo) + " MXN\n",
+                new Font(Font.HELVETICA, 22, Font.BOLD, PRIMARY_DARK)));
+        saldoPara.add(new Phrase("Al " + java.time.LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                new Font(Font.HELVETICA, 8, Font.NORMAL, TEXT_MUTED)));
+        saldoCell.addElement(saldoPara);
+
+        datosTable.addCell(saldoCell);
+        document.add(datosTable);
+
+        // ================================================================
+        // SECCION 2: TABLA DE MOVIMIENTOS
+        // ================================================================
+        document.add(crearSeccionHeader("HISTORIAL DE MOVIMIENTOS"));
+
+        PdfPTable movTable = new PdfPTable(4);
+        movTable.setWidthPercentage(100);
+        movTable.setWidths(new float[]{1.5f, 3, 1.2f, 1.3f});
+        movTable.setSpacingBefore(10);
+        movTable.setSpacingAfter(15);
+
+        // Encabezados de la tabla
+        Font headerFont = new Font(Font.HELVETICA, 9, Font.BOLD, Color.WHITE);
+        Color headerBg = PRIMARY_MID;
+
+        String[] headers = {"FECHA", "DESCRIPCION", "TIPO", "MONTO"};
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
+            cell.setBackgroundColor(headerBg);
+            cell.setPadding(8);
+            cell.setBorderColor(BORDER_COLOR);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            movTable.addCell(cell);
+        }
+
+        // Filas de movimientos
+        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        if (movimientos == null || movimientos.isEmpty()) {
+            PdfPCell emptyCell = new PdfPCell(new Phrase("No hay movimientos registrados",
+                    new Font(Font.HELVETICA, 10, Font.ITALIC, TEXT_MUTED)));
+            emptyCell.setColspan(4);
+            emptyCell.setPadding(20);
+            emptyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            emptyCell.setBorderColor(BORDER_COLOR);
+            movTable.addCell(emptyCell);
+        } else {
+            for (MovimientoEntity mov : movimientos) {
+                // Fecha
+                PdfPCell fechaMovCell = new PdfPCell(new Phrase(
+                        mov.getFecha() != null ? mov.getFecha().format(dateFmt) : "—",
+                        new Font(Font.HELVETICA, 8, Font.NORMAL, TEXT_DARK)));
+                fechaMovCell.setPadding(6);
+                fechaMovCell.setBorderColor(BORDER_COLOR);
+                movTable.addCell(fechaMovCell);
+
+                // Descripcion
+                PdfPCell descCell = new PdfPCell(new Phrase(
+                        mov.getDescripcion() != null ? mov.getDescripcion() : "—",
+                        new Font(Font.HELVETICA, 8, Font.NORMAL, TEXT_DARK)));
+                descCell.setPadding(6);
+                descCell.setBorderColor(BORDER_COLOR);
+                movTable.addCell(descCell);
+
+                // Tipo
+                PdfPCell tipoCell = new PdfPCell(new Phrase(
+                        mov.getTipo() != null ? mov.getTipo() : "—",
+                        new Font(Font.HELVETICA, 8, Font.NORMAL, TEXT_DARK)));
+                tipoCell.setPadding(6);
+                tipoCell.setBorderColor(BORDER_COLOR);
+                tipoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                movTable.addCell(tipoCell);
+
+                // Monto (con signo segun origen)
+                boolean esDebito = cuentaClabe.equals(mov.getCuentaOrigen());
+                String montoStr = (esDebito ? "-" : "+") + "$" + String.format("%,.2f", mov.getMonto());
+                Font montoFont = new Font(Font.HELVETICA, 8, Font.BOLD,
+                        esDebito ? new Color(220, 53, 69) : new Color(25, 135, 84));
+
+                PdfPCell montoCell = new PdfPCell(new Phrase(montoStr, montoFont));
+                montoCell.setPadding(6);
+                montoCell.setBorderColor(BORDER_COLOR);
+                montoCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                movTable.addCell(montoCell);
+            }
+        }
+
+        document.add(movTable);
+
+        // ================================================================
+        // SECCION 3: RESUMEN DE MOVIMIENTOS
+        // ================================================================
+        if (movimientos != null && !movimientos.isEmpty()) {
+            double ingresos = movimientos.stream()
+                    .filter(m -> !cuentaClabe.equals(m.getCuentaOrigen()))
+                    .mapToDouble(MovimientoEntity::getMonto).sum();
+            double egresos = movimientos.stream()
+                    .filter(m -> cuentaClabe.equals(m.getCuentaOrigen()))
+                    .mapToDouble(MovimientoEntity::getMonto).sum();
+
+            document.add(crearSeccionHeader("RESUMEN DEL PERIODO"));
+
+            PdfPTable resumenTable = new PdfPTable(3);
+            resumenTable.setWidthPercentage(100);
+            resumenTable.setWidths(new float[]{1, 1, 1});
+            resumenTable.setSpacingBefore(10);
+            resumenTable.setSpacingAfter(20);
+
+            // Ingresos
+            PdfPCell ingCell = new PdfPCell();
+            ingCell.setBorder(Rectangle.BOX);
+            ingCell.setBorderColor(BORDER_COLOR);
+            ingCell.setPadding(10);
+            ingCell.setBackgroundColor(BG_LIGHT);
+            ingCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            Paragraph ingPara = new Paragraph();
+            ingPara.add(new Phrase("INGRESOS\n", LABEL_FONT));
+            ingPara.add(new Phrase("$ " + String.format("%,.2f", ingresos) + "\n",
+                    new Font(Font.HELVETICA, 14, Font.BOLD, new Color(25, 135, 84))));
+            ingCell.addElement(ingPara);
+            resumenTable.addCell(ingCell);
+
+            // Egresos
+            PdfPCell egCell = new PdfPCell();
+            egCell.setBorder(Rectangle.BOX);
+            egCell.setBorderColor(BORDER_COLOR);
+            egCell.setPadding(10);
+            egCell.setBackgroundColor(BG_LIGHT);
+            egCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            Paragraph egPara = new Paragraph();
+            egPara.add(new Phrase("EGRESOS\n", LABEL_FONT));
+            egPara.add(new Phrase("$ " + String.format("%,.2f", egresos) + "\n",
+                    new Font(Font.HELVETICA, 14, Font.BOLD, new Color(220, 53, 69))));
+            egCell.addElement(egPara);
+            resumenTable.addCell(egCell);
+
+            // Total movimientos
+            PdfPCell totCell = new PdfPCell();
+            totCell.setBorder(Rectangle.BOX);
+            totCell.setBorderColor(BORDER_COLOR);
+            totCell.setPadding(10);
+            totCell.setBackgroundColor(BG_LIGHT);
+            totCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            Paragraph totPara = new Paragraph();
+            totPara.add(new Phrase("TOTAL MOVIMIENTOS\n", LABEL_FONT));
+            totPara.add(new Phrase(String.valueOf(movimientos.size()) + "\n",
+                    new Font(Font.HELVETICA, 14, Font.BOLD, PRIMARY_DARK)));
+            totCell.addElement(totPara);
+            resumenTable.addCell(totCell);
+
+            document.add(resumenTable);
+        }
+
+        // ================================================================
+        // NOTAS LEGALES
+        // ================================================================
+        PdfPTable legalTable = new PdfPTable(1);
+        legalTable.setWidthPercentage(100);
+        legalTable.setSpacingBefore(5);
+
+        PdfPCell legalCell = new PdfPCell();
+        legalCell.setBorder(Rectangle.NO_BORDER);
+        legalCell.setPadding(8);
+
+        Paragraph legalNotice = new Paragraph();
+        legalNotice.add(new Phrase("Notas importantes:\n",
+                new Font(Font.HELVETICA, 8, Font.BOLD, PRIMARY_MID)));
+        legalNotice.add(new Phrase("- Este documento es un estado de cuenta informativo generado electronicamente.\n",
+                new Font(Font.HELVETICA, 7, Font.NORMAL, TEXT_MUTED)));
+        legalNotice.add(new Phrase("- Los movimientos aqui mostrados reflejan las operaciones registradas en el sistema.\n",
+                new Font(Font.HELVETICA, 7, Font.NORMAL, TEXT_MUTED)));
+        legalNotice.add(new Phrase("- Banco de Mexico se reserva el derecho de correccion ante cualquier discrepancia.\n",
+                new Font(Font.HELVETICA, 7, Font.NORMAL, TEXT_MUTED)));
+        legalNotice.add(new Phrase("- Este documento fue generado el "
+                + java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'a las' HH:mm"))
+                + ".", new Font(Font.HELVETICA, 7, Font.NORMAL, TEXT_MUTED)));
+
+        legalCell.addElement(legalNotice);
+        legalTable.addCell(legalCell);
+        document.add(legalTable);
+
+        document.close();
+
+        return baos.toByteArray();
+    }
 
     /**
      * Decodifica una cadena Base64 (con o sin prefijo data:image/...) y devuelve
